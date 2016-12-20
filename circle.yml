@@ -1,0 +1,5 @@
+dependencies:
+  cache_directories:
+    - "~/.sbt"
+    - "target/resolution-cache"
+    - "project/target/resolution-cache"
