@@ -1,5 +1,7 @@
 # Comms platform Kafka Avro serialisation
 
+[ ![CircleCI](https://circleci.com/gh/ovotech/comms-kafka-serialisation/tree/master.svg?style=svg) ](https://circleci.com/gh/ovotech/comms-kafka-serialisation/tree/master)
+
 [![Download](https://api.bintray.com/packages/ovotech/maven/comms-kafka-serialisation/images/download.svg)](https://bintray.com/ovotech/maven/comms-kafka-serialisation/_latestVersion)
 
 Utility functions to generate Kakfa (de)serialisers for case classes with Avro schemas
