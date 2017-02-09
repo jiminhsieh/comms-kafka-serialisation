@@ -14,8 +14,8 @@ trait DecoderUtil {
     *
     * We ignore the type hint and descend into the nested value.
     */
-  protected def getTheOnlyFieldOfJsonObject(c: HCursor): Option[Json] =
-    JsonPath.root.each.json.headOption(c.value)
+  protected def getTheOnlyFieldOfJsonObject(json: Json): Option[Json] =
+    JsonPath.root.each.json.headOption(json)
 
   implicit final val decodeCNil: Decoder[CNil] = new Decoder[CNil] {
     def apply(c: HCursor): Decoder.Result[CNil] = Left(DecodingFailure("CNil", c.history))
@@ -43,7 +43,7 @@ trait LowPriorityDecoders extends DecoderUtil {
   implicit final def decodeCCons[L, R <: Coproduct](implicit
                                                     coproductDecoder: CoproductDecoder[L :+: R]
                                                    ): Decoder[L :+: R] = Decoder.instance[L :+: R] { (c: HCursor) =>
-    getTheOnlyFieldOfJsonObject(c) match {
+    getTheOnlyFieldOfJsonObject(c.value) match {
       case Some(json) => coproductDecoder.decoder.decodeJson(json)
       case None => Left(DecodingFailure(s"Error decoding Coproduct value", c.history))
     }
@@ -53,14 +53,28 @@ trait LowPriorityDecoders extends DecoderUtil {
 
 object Decoders extends LowPriorityDecoders {
 
-  implicit def decodeOption[T : Decoder]: Decoder[Option[T]] = Decoder.instance[Option[T]] { (c: HCursor) =>
-    if (c.value.isNull) {
-      Right(None)
-    } else {
-      getTheOnlyFieldOfJsonObject(c) match {
-        case Some(json) => json.as[T].right.map(Some(_))
-        case None => Left(DecodingFailure(s"Error decoding option value", c.history))
-      }
+  implicit def decodeOption[T : Decoder]: Decoder[Option[T]] = Decoder.withReattempt[Option[T]] { (c: ACursor) =>
+    /*
+    An optional field could be None in two different ways:
+
+    1. The field is present and explicitly set to null.
+       This is how Avro encodes optional fields.
+
+    2. The field is not present at all in the JSON,
+       e.g. because the producer is using an older schema version that doesn't include the field
+     */
+    c.focus match {
+      case Some(value) =>
+        if (value.isNull) {
+          Right(None)
+        } else {
+          getTheOnlyFieldOfJsonObject(value) match {
+            case Some(json) => json.as[T].right.map(Some(_))
+            case None => Left(DecodingFailure(s"Error decoding option value", c.history))
+          }
+        }
+      case None =>
+        Right(None)
     }
   }
 

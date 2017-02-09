@@ -9,6 +9,8 @@ import org.apache.avro.Schema
 import org.apache.avro.Schema.Field
 import org.apache.avro.generic.GenericData.EnumSymbol
 
+import com.ovoenergy.comms.model.ComposedEmail
+
 import scala.reflect.ClassTag
 
 class SerialisationSpec extends FlatSpec with Matchers {
@@ -125,6 +127,40 @@ class SerialisationSpec extends FlatSpec with Matchers {
     }
 
     Serialisation.avroDeserializer[FakeMessage].deserialize("my-topic", json.getBytes()) shouldBe Some(expected)
+  }
+
+  it should "deserialize an Option as None if the field is not present" in {
+    import Decoders._
+
+    // This json does not include the optional 'expireAt' field
+    val jsonString =
+			"""
+			{
+				"metadata":{
+					"createdAt":"2017-02-07T16:57:21.492Z",
+					"eventId":"b46c6beb-f23c-47e2-870e-c71035d8013f",
+					"customerId":"canary-customer",
+					"traceToken":"91876e68-e4fd-4cd0-a4b4-5b496745643c",
+					"commManifest":{"commType":"Service","name":"canary","version":"0.2"},
+					"friendlyDescription":"canary event",
+					"source":"comms-composer",
+					"canary":true,
+					"sourceMetadata":null,
+					"triggerSource":"canary trigger Lambda"
+				},
+				"internalMetadata":{"internalTraceToken":"49f343ee-c6f9-45b1-ab44-71a3321f0812"},
+				"sender":"Ovo Energy <no-reply@ovoenergy.com>",
+				"recipient":"ovo.comms.canary@gmail.com",
+				"subject":"Canary test email (91876e68-e4fd-4cd0-a4b4-5b496745643c)\n",
+				"htmlBody":"here's some html",
+				"textBody":null
+			}
+			"""
+
+    val composedEmail = Serialisation.avroDeserializer[ComposedEmail].deserialize("my-topic", jsonString.getBytes)
+    composedEmail shouldBe 'defined
+    composedEmail.get.htmlBody shouldBe "here's some html"
+    composedEmail.get.expireAt shouldBe None
   }
 
   behavior of "round trip"

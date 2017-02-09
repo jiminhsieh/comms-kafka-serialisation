@@ -8,6 +8,7 @@ licenses in ThisBuild += ("MIT", url("http://opensource.org/licenses/MIT"))
 val testReportsDir = sys.env.getOrElse("CI_REPORTS", "target/reports")
 testOptions in ThisBuild += Tests.Argument(TestFrameworks.ScalaTest, "-o", "-u", testReportsDir)
 
+resolvers += Resolver.bintrayRepo("ovotech", "maven")
 val circeVersion = "0.7.0"
 libraryDependencies ++= Seq(
   "io.circe"            %% "circe-core"               % circeVersion,
@@ -16,6 +17,8 @@ libraryDependencies ++= Seq(
   "com.sksamuel.avro4s" %% "avro4s-core" % "1.6.2",
   "org.apache.kafka" % "kafka-clients" % "0.10.0.1",
   "org.slf4j" % "slf4j-api" % "1.7.21",
+  "org.slf4j" % "slf4j-simple" % "1.7.21" % Test,
   "org.scalatest" %% "scalatest" % "3.0.1" % Test,
-  "io.circe"            %% "circe-generic"            % circeVersion % Test
+  "io.circe"            %% "circe-generic"            % circeVersion % Test,
+  "com.ovoenergy"       %% "comms-kafka-messages"     % "1.2" % Test
 )
