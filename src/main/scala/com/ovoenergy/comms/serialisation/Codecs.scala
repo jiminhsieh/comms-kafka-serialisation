@@ -1,7 +1,11 @@
 package com.ovoenergy.comms.serialisation
 
+import java.time.Instant
+
+import com.sksamuel.avro4s.{ToSchema, ToValue}
 import io.circe._
 import io.circe.optics._
+import org.apache.avro.Schema
 import shapeless._
 import shapeless.labelled._
 
@@ -51,7 +55,7 @@ trait LowPriorityDecoders extends DecoderUtil {
 
 }
 
-object Decoders extends LowPriorityDecoders {
+object Codecs extends LowPriorityDecoders {
 
   implicit def decodeOption[T : Decoder]: Decoder[Option[T]] = Decoder.withReattempt[Option[T]] { (c: ACursor) =>
     /*
@@ -106,5 +110,23 @@ object Decoders extends LowPriorityDecoders {
                                              edr: EnumDecoder[R]
                                             ): Decoder[A] =
     Decoder.instance[A](c => edr.decoder(c).right.map(gen.from))
+
+  /**
+    * Instant serialized to Long as per the 'Kafka Manifesto'
+    */
+  implicit def decodeInstant: Decoder[Instant] = Decoder.decodeLong.emap { long =>
+    import cats.syntax.either._
+    Either.catchNonFatal(Instant.ofEpochMilli(long)).leftMap(t => t.getMessage)
+  }
+
+  implicit object InstantToSchema extends ToSchema[Instant] {
+    override val schema: Schema = Schema.create(Schema.Type.LONG)
+  }
+
+  implicit object InstantToValue extends ToValue[Instant] {
+    override def apply(value: Instant): Long = value.toEpochMilli
+  }
+
+
 
 }

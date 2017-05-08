@@ -1,5 +1,7 @@
 package com.ovoenergy.comms.serialisation
 
+import java.time.Instant
+
 import org.scalatest.{FlatSpec, Matchers}
 import io.circe._
 import io.circe.generic.auto._
@@ -8,7 +10,6 @@ import com.sksamuel.avro4s._
 import org.apache.avro.Schema
 import org.apache.avro.Schema.Field
 import org.apache.avro.generic.GenericData.EnumSymbol
-
 import com.ovoenergy.comms.model.ComposedEmail
 
 import scala.reflect.ClassTag
@@ -92,7 +93,7 @@ class SerialisationSpec extends FlatSpec with Matchers {
   }
 
   it should "handle extra fields in example message" in {
-    import Decoders._
+    import Codecs._
 
     val json =
       """
@@ -130,7 +131,7 @@ class SerialisationSpec extends FlatSpec with Matchers {
   }
 
   it should "deserialize an Option as None if the field is not present" in {
-    import Decoders._
+    import Codecs._
 
     // This json does not include the optional 'expireAt' field
     val jsonString =
@@ -172,7 +173,7 @@ class SerialisationSpec extends FlatSpec with Matchers {
   }
 
   it should "handle a TemplateData containing a Seq" in {
-    import Decoders._
+    import Codecs._
 
     val seq = Seq(TemplateData(Coproduct[TemplateDataType]("stringValue1")))
     val templateDataSeq = TemplateData(Coproduct[TemplateDataType](seq))
@@ -181,7 +182,7 @@ class SerialisationSpec extends FlatSpec with Matchers {
   }
 
   it should "handle a TemplateData containing a Map" in {
-    import Decoders._
+    import Codecs._
 
     val map = Map("keyString" -> TemplateData(Coproduct[TemplateDataType]("stringValue1")))
     val templateDataMap = TemplateData(Coproduct[TemplateDataType](map))
@@ -190,7 +191,7 @@ class SerialisationSpec extends FlatSpec with Matchers {
   }
 
   it should "handle a TemplateData containing a String" in {
-    import Decoders._
+    import Codecs._
 
     val templateDataString = TemplateData(Coproduct[TemplateDataType]("stringValue1"))
 
@@ -198,7 +199,7 @@ class SerialisationSpec extends FlatSpec with Matchers {
   }
 
   it should "handle a TemplateData containing a complex structure" in {
-    import Decoders._
+    import Codecs._
 
     val map = Map("mapKey" -> TemplateData(Coproduct[TemplateDataType]("mapValue1")))
     val seqString = Seq(TemplateData(Coproduct[TemplateDataType]("stringSeq1")), TemplateData(Coproduct[TemplateDataType]("stringSeq2")))
@@ -218,7 +219,7 @@ class SerialisationSpec extends FlatSpec with Matchers {
   }
 
   it should "handle Option of String (Some)" in {
-    import Decoders._
+    import Codecs._
 
     val withOption = WithOptionalString(Some("stringValue"))
 
@@ -226,7 +227,7 @@ class SerialisationSpec extends FlatSpec with Matchers {
   }
 
   it should "handle Option of String (None)" in {
-    import Decoders._
+    import Codecs._
 
     val withOption = WithOptionalString(None)
 
@@ -234,7 +235,7 @@ class SerialisationSpec extends FlatSpec with Matchers {
   }
 
   it should "handle Option of case class (Some)" in {
-    import Decoders._
+    import Codecs._
 
     val withOption = WithOptionalCaseClass(Some(OptionalCaseClass("stringValue", 1)))
 
@@ -242,7 +243,7 @@ class SerialisationSpec extends FlatSpec with Matchers {
   }
 
   it should "handle Option of case class (None)" in {
-    import Decoders._
+    import Codecs._
 
     val withOption = WithOptionalCaseClass(None)
 
@@ -250,7 +251,7 @@ class SerialisationSpec extends FlatSpec with Matchers {
   }
 
   it should "handle Option of some complex structure" in {
-    import Decoders._
+    import Codecs._
 
     case class WithOption(theOption: Option[Seq[Map[String, OptionalCaseClass]]])
 
@@ -262,7 +263,7 @@ class SerialisationSpec extends FlatSpec with Matchers {
   }
 
   it should "handle recursive types" in {
-    import Decoders._
+    import Codecs._
 
     val child = Recursive("child", None)
     val parent = Recursive("parent", Some(child))
@@ -271,9 +272,20 @@ class SerialisationSpec extends FlatSpec with Matchers {
   }
 
   it should "handle enums" in {
-    import Decoders._
+    import Codecs._
 
     checkRoundTrip(WithEnum(EnumA))
+  }
+
+  it should "handle an Instant" in {
+    import io.circe.generic.auto._
+    import Codecs._
+
+    object WithInstant {
+      implicit val schema = SchemaFor[WithInstant]
+    }
+    case class WithInstant(anInstant: Instant)
+    checkRoundTrip(WithInstant(Instant.now))
   }
 
   def checkRoundTrip[A: Decoder: SchemaFor: ToRecord: ClassTag](original: A): Unit = {

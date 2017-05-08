@@ -1,6 +1,6 @@
 scalaVersion in ThisBuild := "2.11.8"
 
-bintrayOrganization in ThisBuild := Some("ovotech")
+bintrayOrganization in ThisBuild := Some("ovocomms")
 organization in ThisBuild := "com.ovoenergy"
 licenses in ThisBuild += ("MIT", url("http://opensource.org/licenses/MIT"))
 
