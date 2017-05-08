@@ -5,7 +5,7 @@ import java.time.Instant
 import com.sksamuel.avro4s.{ToSchema, ToValue}
 import io.circe._
 import io.circe.optics._
-import org.apache.avro.Schema
+import org.apache.avro.{LogicalTypes, Schema}
 import shapeless._
 import shapeless.labelled._
 
@@ -120,7 +120,10 @@ object Codecs extends LowPriorityDecoders {
   }
 
   implicit object InstantToSchema extends ToSchema[Instant] {
-    override val schema: Schema = Schema.create(Schema.Type.LONG)
+    override val schema: Schema = {
+      val s = Schema.create(Schema.Type.LONG)
+      LogicalTypes.timestampMillis().addToSchema(s)
+    }
   }
 
   implicit object InstantToValue extends ToValue[Instant] {
