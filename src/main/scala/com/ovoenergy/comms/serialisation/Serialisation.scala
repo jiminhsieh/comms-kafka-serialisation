@@ -52,7 +52,7 @@ object Serialisation {
     def addMissingOptionalFields(data: Array[Byte]): Either[ParsingFailure, Array[Byte]] = {
       parse(new String(data, StandardCharsets.UTF_8)).right.map { originalJson =>
         // Note: the order is important when calling `deepMerge`.
-        // Values in `originalJson` take precedence over values in `originalJson`.
+        // Values in `originalJson` take precedence over values in `nulledOptionalFields`.
         val fixedJson = nulledOptionalFields.deepMerge(originalJson)
         fixedJson.noSpaces.getBytes(StandardCharsets.UTF_8)
       }
