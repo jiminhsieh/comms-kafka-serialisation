@@ -1,0 +1,54 @@
+{
+  "metadata": {
+    "createdAt": "2017-05-15T09:46:16.399Z",
+    "eventId": "faa0246c-7e09-4719-bc93-e72fa46d6596",
+    "customerId": "12345",
+    "traceToken": "example-trace-token",
+    "commManifest": {
+      "commType": "Service",
+      "name": "cc-payment-taken",
+      "version": "0.3"
+    },
+    "friendlyDescription": "One-off card payment",
+    "source": "payment gateway service",
+    "canary": false,
+    "sourceMetadata": null,
+    "triggerSource": "payment gateway trigger lambda"
+  },
+  "templateData": {
+    "currencySymbol": {
+      "value": {
+        "string": "£"
+      }
+    },
+    "accountId": {
+      "value": {
+        "string": "1234567"
+      }
+    },
+    "amount": {
+      "value": {
+        "string": "12.34"
+      }
+    },
+    "date": {
+      "value": {
+        "string": "15/05/2017"
+      }
+    },
+    "cardEnding": {
+      "value": {
+        "string": "1234"
+      }
+    },
+    "transactionId": {
+      "value": {
+        "string": "abcdef"
+      }
+    }
+  },
+  "deliverAt": {
+    "string": "2018-01-01T12:34:56.000Z"
+  },
+  "expireAt": null
+}
