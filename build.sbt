@@ -17,6 +17,10 @@ val commonSettings = Seq(
 
 lazy val root = Project("root", file("."))
   .settings(commonSettings)
+  .settings(
+    releasePublishArtifactsAction:= {},
+    publishArtifact := false
+  )
   .aggregate(serialisation, akkaStreams, cakeSolutions)
 
 lazy val serialisation = Project("comms-kafka-serialisation", file("modules/serialisation"))
