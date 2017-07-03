@@ -146,7 +146,7 @@ object Serialisation {
     serializer
   }
 
-  private def registerSchema[T: SchemaFor](schemaRegistryClient: SchemaRegistryClient, topic: String)
+  private def registerSchema[T](schemaRegistryClient: SchemaRegistryClient, topic: String)
                                           (implicit sf: SchemaFor[T]) = {
     val schema = sf.apply()
     schemaRegistryClient.register(s"$topic-value", schema)
