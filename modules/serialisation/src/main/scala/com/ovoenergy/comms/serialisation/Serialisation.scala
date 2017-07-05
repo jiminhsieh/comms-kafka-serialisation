@@ -24,8 +24,10 @@ object Serialisation {
       override def close(): Unit = {}
       override def deserialize(topic: String, data: Array[Byte]): Option[T] = {
         val bais = new ByteArrayInputStream(data)
-        val input = AvroJsonInputStream[T](bais)
-        val result = input.singleEntity
+        val result = for {
+          input <- Try(AvroJsonInputStream[T](bais))
+          entity <- input.singleEntity
+        } yield entity
 
         result.failed.foreach { e =>
           val className = implicitly[ClassTag[T]].runtimeClass.getSimpleName
@@ -77,8 +79,10 @@ object Serialisation {
             None
           case Right(fixedBytes) =>
             val bais = new ByteArrayInputStream(fixedBytes)
-            val input = AvroJsonInputStream[T](bais)
-            val result = input.singleEntity
+            val result = for {
+              input <- Try(AvroJsonInputStream[T](bais))
+              entity <- input.singleEntity
+            } yield entity
 
             result.failed.foreach { e =>
               val className = implicitly[ClassTag[T]].runtimeClass.getSimpleName
