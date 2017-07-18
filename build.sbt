@@ -10,7 +10,8 @@ val commonSettings = Seq(
       "confluent-release" at "http://packages.confluent.io/maven/"
     )
   ),
-  scalaVersion := "2.11.9",
+  scalaVersion := "2.11.11",
+  crossScalaVersions += "2.12.2",
   organization := "com.ovoenergy",
   licenses += ("MIT", url("http://opensource.org/licenses/MIT"))
 )
@@ -34,7 +35,7 @@ lazy val serialisation = Project("comms-kafka-serialisation", file("modules/seri
       "com.ovoenergy" %% "kafka-serialization-avro4s" % "0.1.18",
       "org.slf4j" % "slf4j-api" % "1.7.21",
       "org.scalatest" %% "scalatest" % "3.0.1" % Test,
-      "com.ovoenergy" %% "comms-kafka-messages" % "1.20" % Test,
+      "com.ovoenergy" %% "comms-kafka-messages" % "1.28" % Test,
       "org.slf4j" % "slf4j-simple" % "1.7.21" % Test
     )
   )
@@ -58,4 +59,4 @@ lazy val cakeSolutions = Project("comms-kafka-cakesolutions-helpers", file("modu
     )
   )
 
-
+releaseCrossBuild := true
