@@ -1,0 +1,20 @@
+version: 2
+jobs:
+  build:
+    working_directory: ~/comms-kafka-serialization
+    machine: true
+    steps:
+    - restore_cache:
+          key: dependency-cache
+          paths:
+            - "~/.sbt"
+            - "target/resolution-cache"
+            - "project/target/resolution-cache"
+      - checkout
+      - run: sbt -mem 1500 +test
+      - save_cache:
+          key: dependency-cache
+          paths:
+            - "~/.sbt"
+            - "target/resolution-cache"
+            - "project/target/resolution-cache"

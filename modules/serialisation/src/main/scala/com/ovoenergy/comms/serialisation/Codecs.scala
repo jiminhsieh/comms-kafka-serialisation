@@ -22,5 +22,4 @@ object Codecs {
     override def apply(value: Any, field: Schema.Field) = Instant.ofEpochMilli(value.toString.toLong)
   }
 
-
 }

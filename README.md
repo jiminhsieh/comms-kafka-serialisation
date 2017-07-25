@@ -64,36 +64,40 @@ Note that this functionality is a thin wrapper around the kafka-serialization li
 difference in functionality is that this wrapper will register the schema with the schema registry immediately on startup when the de(serialiser) is created rather than lazily, and deserialised values will be 
 optional, returning Optional.None when deserialisation fails.
 
-### Akka helpers
 
-The comms-kafka-akka-helpers module provides a couple of helper methods to generate consumer and producer settings, to be used with akka-streams-kafka. These use the binary Avro (de)serialisers shown in the example above. 
+### Helpers
 
-For example, to generate consumer settings:
-
-
-```
-    import akka.actor.ActorSystem
-    import com.ovoenergy.comms.akka.streams.Factory.consumerSettings
-    import com.ovoenergy.comms.serialisation.KafkaConfig
-
-    val kafkaConfig = KafkaConfig("my-group-id", "kafka-host:9812", "my-topic")
-    val actorSystem= ActorSystem.apply()
-    val akkaConsumerSettings: ConsumerSettings[String, Option[MyLovelyKafkaEvent]] = consumerSettings[MyLovelyKafkaEvent](schemaRegistryClientSettings, kafkaConfig, actorSystem)
-
-```
-
-
-### Cakesolutions helpers
-
-The comms-cakesolutions-helpers module provides a couple of helper methods to create kafka producers or consumers, using the binary Avro (de)serialisers just as the akka example above. So for example:
+This is a collection of classes for dealing with the kafka topics.  It enumerates all of the topics and events on offer and allows users to make type-safe producers and consumers for either aiven or legacy.
   
   ```
-      import com.ovoenergy.comms.cakesolutions.helpers.Factory.consumer
-      import org.apache.kafka.clients.consumer.KafkaConsumer
+      import com.ovoenergy.comms.helpers.{Kafka, Topic}
+      import com.ovoenergy.comms.serialisation.Codecs._
 
-      val cakeSolutionsConsumer: KafkaConsumer[String, Option[MyLovelyKafkaEvent]] = consumer[MyLovelyKafkaEvent](schemaRegistryClientSettings, kafkaConfig)
+      val consumer: KafkaConsumer[String, Option[TriggeredV3]] = Kafka.aiven.triggered.v3.consumer
+      val producer: KafkaProducer[String, TriggeredV2] = Kafka.legacy.triggered.v2.producer
+  ```
+    
+
+### Test Helpers
+
+Currently this consists of a utility to iterate over available topics
   
   ```
+      import com.ovoenergy.comms.helpers.{Kafka, Topic}
+      import ArbGenerator._
+      import TopicListTraverser._
+      import com.ovoenergy.comms.serialisation.Codecs._
+      import shapeless._
+      import org.scalacheck.Shapeless._
+      
+      val visitor = new TopicListVisitor {
+          override def apply[E: SchemaFor : Arbitrary : ToRecord : FromRecord : ClassTag](topic: Topic[E]): Unit = {
+            println(topic.name)
+          }
+        }
+      TopicListTraverser(Kafka.legacy.allTopics, visitor)
+  ```
+
 
 ## To release a new version
 
