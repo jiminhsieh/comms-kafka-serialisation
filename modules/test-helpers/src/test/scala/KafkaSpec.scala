@@ -18,6 +18,9 @@ class KafkaSpec extends FlatSpec with EmbeddedKafkaSpec with Matchers with Scala
   import shapeless._
   import org.scalacheck.Shapeless._
 
+  //Pimp the topics
+  import KafkaTestHelpers._
+
   implicit val config: Config          = ConfigFactory.load()
   override implicit val patienceConfig = PatienceConfig(scaled(Span(10, Seconds)))
 
@@ -27,6 +30,7 @@ class KafkaSpec extends FlatSpec with EmbeddedKafkaSpec with Matchers with Scala
         val e = generate[E]
 
         val pub = topic.publisher
+        topic.checkNoMessages()
         pub(e).futureValue
         topic.pollConsumer() shouldBe Seq(e)
       }

@@ -155,6 +155,40 @@ object Serialisation {
     }
   }
 
+  def avroBinarySchemaRegistryDeserializerNoMagicByte[T: FromRecord: SchemaFor: ClassTag](
+      schemaRegistryClientSettings: SchemaRegistryClientSettings,
+      topic: String): Deserializer[Option[T]] = {
+    val schemaRegistryClient = JerseySchemaRegistryClient(schemaRegistryClientSettings)
+    val baseDeserializer     = avroBinarySchemaIdDeserializer[T](schemaRegistryClient, isKey = false)
+
+    registerSchema[T](schemaRegistryClient, topic)
+
+    new Deserializer[Option[T]] {
+      override def configure(configs: util.Map[String, _], isKey: Boolean) {
+        baseDeserializer.configure(configs, isKey)
+      }
+
+      override def close(): Unit = baseDeserializer.close()
+      override def deserialize(topic: String, data: Array[Byte]): Option[T] = {
+        val result = Try {
+          baseDeserializer.deserialize(topic, data)
+        }
+
+        result.failed.foreach { e =>
+          val className = implicitly[ClassTag[T]].runtimeClass.getSimpleName
+          log.warn(
+            s"""Skippping event because it could not be deserialized to $className
+               |Event:
+               |${new String(data, StandardCharsets.UTF_8)}
+            """.stripMargin,
+            e
+          )
+        }
+        result.toOption
+      }
+    }
+  }
+
   def avroBinarySchemaRegistrySerializer[T: ToRecord: SchemaFor](
       schemaRegistryClientSettings: SchemaRegistryClientSettings,
       topic: String): Serializer[T] = {
@@ -162,6 +196,15 @@ object Serialisation {
     val serializer           = avroBinarySchemaIdSerializer[T](schemaRegistryClient, isKey = false)
     registerSchema[T](schemaRegistryClient, topic)
     formatSerializer(AvroBinarySchemaId, serializer)
+  }
+
+  def avroBinarySchemaRegistrySerializerNoMagicByte[T: ToRecord: SchemaFor](
+      schemaRegistryClientSettings: SchemaRegistryClientSettings,
+      topic: String): Serializer[T] = {
+    val schemaRegistryClient = JerseySchemaRegistryClient(schemaRegistryClientSettings)
+    val serializer           = avroBinarySchemaIdSerializer[T](schemaRegistryClient, isKey = false)
+    registerSchema[T](schemaRegistryClient, topic)
+    serializer
   }
 
   private def registerSchema[T](schemaRegistryClient: SchemaRegistryClient, topic: String)(implicit sf: SchemaFor[T]) = {

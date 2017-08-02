@@ -14,48 +14,53 @@ case class CommsKafkaCluster(clusterName: String)(implicit config: Config) {
       case Right(c)  => c
     }
   }
+
+  val retry: Option[RetryConfig] = kafkaConfig.retry
 }
 
 object Kafka {
   def aiven(implicit config: Config) = new CommsKafkaCluster("aiven") {
     val triggered = new {
-      val v3 = Topic[TriggeredV3]("triggeredV3")
+      val v3 = Topic[TriggeredV3]("triggeredV3", useMagicByte = true)
     }
     val composedEmail = new {
-      val v2 = Topic[ComposedEmailV2]("composedEmailV2")
+      val v2 = Topic[ComposedEmailV2]("composedEmailV2", useMagicByte = false)
     }
     val composedSms = new {
-      val v2 = Topic[ComposedSMSV2]("composedSmsV2")
+      val v2 = Topic[ComposedSMSV2]("composedSmsV2", useMagicByte = false)
     }
     val failed = new {
-      val v2 = Topic[FailedV2]("failedV2")
+      val v2 = Topic[FailedV2]("failedV2", useMagicByte = false)
     }
     val issuedForDelivery = new {
-      val v2 = Topic[IssuedForDeliveryV2]("issuedForDeliveryV2")
+      val v2 = Topic[IssuedForDeliveryV2]("issuedForDeliveryV2", useMagicByte = false)
+    }
+    val orchestrationStarted = new {
+      val v2 = Topic[OrchestrationStartedV2]("orchestrationStartedV2", useMagicByte = false)
     }
     val orchestratedEmail = new {
-      val v3 = Topic[OrchestratedEmailV3]("orchestratedEmailV3")
+      val v3 = Topic[OrchestratedEmailV3]("orchestratedEmailV3", useMagicByte = false)
     }
     val orchestratedSMS = new {
-      val v2 = Topic[OrchestratedSMSV2]("orchestratedSmsV2")
+      val v2 = Topic[OrchestratedSMSV2]("orchestratedSmsV2", useMagicByte = false)
     }
     val progressedEmail = new {
-      val v2 = Topic[EmailProgressedV2]("progressedEmailV2")
+      val v2 = Topic[EmailProgressedV2]("progressedEmailV2", useMagicByte = false)
     }
     val progressedSMS = new {
-      val v2 = Topic[SMSProgressedV2]("progressedSmsV2")
+      val v2 = Topic[SMSProgressedV2]("progressedSmsV2", useMagicByte = false)
     }
     val linkClicked = new {
-      val v2 = Topic[LinkClickedV2]("linkClickedV2")
+      val v2 = Topic[LinkClickedV2]("linkClickedV2", useMagicByte = false)
     }
     val cancellationRequested = new {
-      val v2 = Topic[CancellationRequestedV2]("cancellationRequestedV2")
+      val v2 = Topic[CancellationRequestedV2]("cancellationRequestedV2", useMagicByte = true)
     }
     val failedCancellation = new {
-      val v2 = Topic[FailedCancellationV2]("failedCancellationV2")
+      val v2 = Topic[FailedCancellationV2]("failedCancellationV2", useMagicByte = false)
     }
     val cancelled = new {
-      val v2 = Topic[CancelledV2]("cancelledV2")
+      val v2 = Topic[CancelledV2]("cancelledV2", useMagicByte = false)
     }
 
     val allTopics = triggered.v3 :: composedEmail.v2 :: composedSms.v2 :: failed.v2 :: issuedForDelivery.v2 ::
