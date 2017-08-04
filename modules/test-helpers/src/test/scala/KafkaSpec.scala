@@ -29,10 +29,13 @@ class KafkaSpec extends FlatSpec with EmbeddedKafkaSpec with Matchers with Scala
       it should s"Send and receive ${topic.name}" in {
         val e = generate[E]
 
-        val pub = topic.publisher
-        topic.checkNoMessages()
-        pub(e).futureValue
-        topic.pollConsumer() shouldBe Seq(e)
+        withThrowawayConsumerFor(topic) { consumer =>
+          val pub = topic.publisher
+          consumer.checkNoMessages()
+          pub(e).futureValue
+          consumer.pollFor() shouldBe Seq(e)
+          topic.pollConsumer() shouldBe Seq(e)
+        }
       }
     }
   }
