@@ -14,6 +14,7 @@ import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.TopicPartition
 import org.apache.kafka.common.config.SslConfigs
 import org.apache.kafka.common.serialization.StringDeserializer
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import org.slf4j.LoggerFactory
 
@@ -21,23 +22,27 @@ import scala.annotation.tailrec
 import scala.concurrent.duration.{Deadline, FiniteDuration}
 import scala.reflect.ClassTag
 import scala.collection.JavaConversions._
+import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
 import scala.util.{Failure, Success}
 
 object KafkaTestHelpers {
   def loggerName: String = getClass.getSimpleName.reverse.dropWhile(_ == '$').reverse
-  lazy val log           = LoggerFactory.getLogger(loggerName)
 
-  def withThrowawayConsumerFor[E1: SchemaFor: FromRecord: ClassTag, R](topic: Topic[E1])(
-      f: JKafkaConsumer[String, Option[E1]] => R): R = {
+  lazy val log = LoggerFactory.getLogger(loggerName)
+
+  def withThrowawayConsumerFor[E1: SchemaFor : FromRecord : ClassTag, R](topic: Topic[E1])(
+    f: JKafkaConsumer[String, Option[E1]] => R): R = {
     val consumer = topic.consumer(fromBeginning = false)
     consumer.poll(0)
     consumer.partitionsFor(topic.name) // as poll doesn't honour the timeout, forcing the consumer to fail here.
     log.info(
-      s"""Created consumer for ${topic.name}, subscription: ${consumer
-        .assignment()
-        .map(tp => tp -> consumer.position(tp))
-        .map(s => s"${s._1} @ ${s._2}")}"""
+      s"""Created consumer for ${topic.name}, subscription: ${
+        consumer
+          .assignment()
+          .map(tp => tp -> consumer.position(tp))
+          .map(s => s"${s._1} @ ${s._2}")
+      }"""
     )
     try {
       f(consumer)
@@ -46,9 +51,9 @@ object KafkaTestHelpers {
     }
   }
 
-  def withThrowawayConsumerFor[E1: SchemaFor: FromRecord: ClassTag, E2: SchemaFor: FromRecord: ClassTag, R](
-      t1: Topic[E1],
-      t2: Topic[E2])(f: (JKafkaConsumer[String, Option[E1]], JKafkaConsumer[String, Option[E2]]) => R): R = {
+  def withThrowawayConsumerFor[E1: SchemaFor : FromRecord : ClassTag, E2: SchemaFor : FromRecord : ClassTag, R](
+                                                                                                                 t1: Topic[E1],
+                                                                                                                 t2: Topic[E2])(f: (JKafkaConsumer[String, Option[E1]], JKafkaConsumer[String, Option[E2]]) => R): R = {
     withThrowawayConsumerFor(t1) { c1 =>
       withThrowawayConsumerFor(t2) { c2 =>
         f(c1, c2)
@@ -68,16 +73,16 @@ object KafkaTestHelpers {
 
       val initialConsumerSettings =
         Conf[String, Option[E]](new StringDeserializer,
-                                chosenDeserializer,
-                                topic.kafkaConfig.hosts,
-                                UUID.randomUUID().toString)
+          chosenDeserializer,
+          topic.kafkaConfig.hosts,
+          UUID.randomUUID().toString)
       val consumerSettings = topic.kafkaConfig.ssl
         .map(
           ssl =>
             initialConsumerSettings
               .withProperty(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SSL")
               .withProperty(SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG,
-                            Paths.get(ssl.keystore.location).toAbsolutePath.toString)
+                Paths.get(ssl.keystore.location).toAbsolutePath.toString)
               .withProperty(SslConfigs.SSL_KEYSTORE_TYPE_CONFIG, "PKCS12")
               .withProperty(SslConfigs.SSL_KEYSTORE_PASSWORD_CONFIG, ssl.keystore.password)
               .withProperty(SslConfigs.SSL_KEY_PASSWORD_CONFIG, ssl.keyPassword)
@@ -87,7 +92,7 @@ object KafkaTestHelpers {
         .getOrElse(initialConsumerSettings)
 
       val resetOffset = if (fromBeginning) "earliest" else "latest"
-      val consumer    = KafkaConsumer(consumerSettings.withProperty("auto.offset.reset", resetOffset))
+      val consumer = KafkaConsumer(consumerSettings.withProperty("auto.offset.reset", resetOffset))
       consumer.subscribe(Seq(topic.name))
       consumer
     }
@@ -106,16 +111,18 @@ object KafkaTestHelpers {
       }
     }
 
-    def publishOnce(event: E)(implicit schemaFor: SchemaFor[E], toRecord: ToRecord[E], classTag: ClassTag[E]) = {
+    def publishOnce(event: E, timeout: Duration = 5.seconds)(implicit schemaFor: SchemaFor[E], toRecord: ToRecord[E], classTag: ClassTag[E]) = {
       val localProducer = topic.producer
-      val future        = localProducer.send(new ProducerRecord[String, E](topic.name, event))
-
-      future.onComplete {
-        case Success(s) => localProducer.close()
-        case Failure(e) => {
-          localProducer.close()
+      try {
+        val future = localProducer.send(new ProducerRecord[String, E](topic.name, event))
+        // Enforce blocking behaviour
+        Await.result(future, timeout)
+      } catch {
+        case e => {
           throw new Exception(s"Failed to publish message to topic ${topic.name} with error $e")
         }
+      } finally{
+        localProducer.close()
       }
     }
   }
@@ -125,10 +132,13 @@ object KafkaTestHelpers {
 
     require(
       subscription.size() == 1,
-      s"""Only works with a consumer which is subscribed to exactly one topic, actually subscribed to ${theConsumer.subscription
-        .mkString(",")}"""
+      s"""Only works with a consumer which is subscribed to exactly one topic, actually subscribed to ${
+        theConsumer.subscription
+          .mkString(",")
+      }"""
     )
     val topicName: String = subscription.head
+
     def pollFor(pollTime: FiniteDuration = 30.second,
                 noOfEventsExpected: Int = 1,
                 condition: V => Boolean = (_: V) => true) = {
@@ -150,10 +160,13 @@ object KafkaTestHelpers {
               .toSeq
 
           records.lastOption.foreach { record =>
-            val topicPartition    = new TopicPartition(record.topic(), record.partition())
+            val topicPartition = new TopicPartition(record.topic(), record.partition())
             val offsetAndMetadata = new OffsetAndMetadata(record.offset() + 1)
-            log.debug(s"""Committed offset of ${offsetAndMetadata.offset()} to topic ${topicPartition
-              .topic()}, partition ${topicPartition.partition()}""")
+            log.debug(
+              s"""Committed offset of ${offsetAndMetadata.offset()} to topic ${
+                topicPartition
+                  .topic()
+              }, partition ${topicPartition.partition()}""")
             theConsumer.commitSync(Map(topicPartition -> offsetAndMetadata))
           }
 
