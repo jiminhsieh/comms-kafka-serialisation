@@ -30,9 +30,8 @@ class KafkaSpec extends FlatSpec with EmbeddedKafkaSpec with Matchers with Scala
         val e = generate[E]
 
         withThrowawayConsumerFor(topic) { consumer =>
-          val pub = topic.publisher
           consumer.checkNoMessages()
-          pub(e).futureValue
+          topic.publishOnce(e)
           consumer.pollFor() shouldBe Seq(e)
           topic.pollConsumer() shouldBe Seq(e)
         }
