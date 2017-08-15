@@ -1,8 +1,8 @@
 package com.ovoenergy.comms.helpers
 
 import com.ovoenergy.comms.model._
-import com.ovoenergy.comms.model.email.{EmailProgressedV2, OrchestratedEmailV3}
-import com.ovoenergy.comms.model.sms.{OrchestratedSMSV2, SMSProgressedV2}
+import com.ovoenergy.comms.model.email._
+import com.ovoenergy.comms.model.sms._
 
 trait HasCommName[A] {
   def commName(a: A): String
@@ -25,5 +25,6 @@ object HasCommName {
   implicit val SMSProgressedHasCommName     = HasCommName.instance[SMSProgressedV2](_.metadata.commManifest.name)
   implicit val LinkClickedHasCommName       = HasCommName.instance[LinkClickedV2](_.metadata.commManifest.name)
   implicit val EmailProgressedHasCommName   = HasCommName.instance[EmailProgressedV2](_.metadata.commManifest.name)
-
+  implicit val ComposedEmailHasCommName     = HasCommName.instance[ComposedEmailV2](_.metadata.commManifest.name)
+  implicit val ComposedSMSHasCommName       = HasCommName.instance[ComposedSMSV2](_.metadata.commManifest.name)
 }
