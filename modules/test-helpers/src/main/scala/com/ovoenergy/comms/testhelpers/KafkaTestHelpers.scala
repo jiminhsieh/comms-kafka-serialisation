@@ -31,18 +31,16 @@ object KafkaTestHelpers {
 
   lazy val log = LoggerFactory.getLogger(loggerName)
 
-  def withThrowawayConsumerFor[E1: SchemaFor : FromRecord : ClassTag, R](topic: Topic[E1])(
-    f: JKafkaConsumer[String, Option[E1]] => R): R = {
+  def withThrowawayConsumerFor[E1: SchemaFor: FromRecord: ClassTag, R](topic: Topic[E1])(
+      f: JKafkaConsumer[String, Option[E1]] => R): R = {
     val consumer = topic.consumer(fromBeginning = false)
     consumer.poll(0)
     consumer.partitionsFor(topic.name) // as poll doesn't honour the timeout, forcing the consumer to fail here.
     log.info(
-      s"""Created consumer for ${topic.name}, subscription: ${
-        consumer
-          .assignment()
-          .map(tp => tp -> consumer.position(tp))
-          .map(s => s"${s._1} @ ${s._2}")
-      }"""
+      s"""Created consumer for ${topic.name}, subscription: ${consumer
+        .assignment()
+        .map(tp => tp -> consumer.position(tp))
+        .map(s => s"${s._1} @ ${s._2}")}"""
     )
     try {
       f(consumer)
@@ -51,9 +49,9 @@ object KafkaTestHelpers {
     }
   }
 
-  def withThrowawayConsumerFor[E1: SchemaFor : FromRecord : ClassTag, E2: SchemaFor : FromRecord : ClassTag, R](
-                                                                                                                 t1: Topic[E1],
-                                                                                                                 t2: Topic[E2])(f: (JKafkaConsumer[String, Option[E1]], JKafkaConsumer[String, Option[E2]]) => R): R = {
+  def withThrowawayConsumerFor[E1: SchemaFor: FromRecord: ClassTag, E2: SchemaFor: FromRecord: ClassTag, R](
+      t1: Topic[E1],
+      t2: Topic[E2])(f: (JKafkaConsumer[String, Option[E1]], JKafkaConsumer[String, Option[E2]]) => R): R = {
     withThrowawayConsumerFor(t1) { c1 =>
       withThrowawayConsumerFor(t2) { c2 =>
         f(c1, c2)
@@ -65,24 +63,19 @@ object KafkaTestHelpers {
     def consumer(fromBeginning: Boolean = true)(implicit schemaFor: SchemaFor[E],
                                                 fromRecord: FromRecord[E],
                                                 classTag: ClassTag[E]): JKafkaConsumer[String, Option[E]] = {
-      val chosenDeserializer =
-        if (topic.useMagicByte)
-          topic.deserializer
-        else
-          topic.deserializerNoMagicByte
 
       val initialConsumerSettings =
         Conf[String, Option[E]](new StringDeserializer,
-          chosenDeserializer,
-          topic.kafkaConfig.hosts,
-          UUID.randomUUID().toString)
+                                topic.deserializer,
+                                topic.kafkaConfig.hosts,
+                                UUID.randomUUID().toString)
       val consumerSettings = topic.kafkaConfig.ssl
         .map(
           ssl =>
             initialConsumerSettings
               .withProperty(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SSL")
               .withProperty(SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG,
-                Paths.get(ssl.keystore.location).toAbsolutePath.toString)
+                            Paths.get(ssl.keystore.location).toAbsolutePath.toString)
               .withProperty(SslConfigs.SSL_KEYSTORE_TYPE_CONFIG, "PKCS12")
               .withProperty(SslConfigs.SSL_KEYSTORE_PASSWORD_CONFIG, ssl.keystore.password)
               .withProperty(SslConfigs.SSL_KEY_PASSWORD_CONFIG, ssl.keyPassword)
@@ -92,7 +85,7 @@ object KafkaTestHelpers {
         .getOrElse(initialConsumerSettings)
 
       val resetOffset = if (fromBeginning) "earliest" else "latest"
-      val consumer = KafkaConsumer(consumerSettings.withProperty("auto.offset.reset", resetOffset))
+      val consumer    = KafkaConsumer(consumerSettings.withProperty("auto.offset.reset", resetOffset))
       consumer.subscribe(Seq(topic.name))
       consumer
     }
@@ -111,17 +104,19 @@ object KafkaTestHelpers {
       }
     }
 
-    def publishOnce(event: E, timeout: Duration = 5.seconds)(implicit schemaFor: SchemaFor[E], toRecord: ToRecord[E], classTag: ClassTag[E]) = {
+    def publishOnce(event: E, timeout: Duration = 5.seconds)(implicit schemaFor: SchemaFor[E],
+                                                             toRecord: ToRecord[E],
+                                                             classTag: ClassTag[E]) = {
       val localProducer = topic.producer
       try {
         val future = localProducer.send(new ProducerRecord[String, E](topic.name, event))
         // Enforce blocking behaviour
         Await.result(future, timeout)
       } catch {
-        case e => {
+        case e: Throwable => {
           throw new Exception(s"Failed to publish message to topic ${topic.name} with error $e")
         }
-      } finally{
+      } finally {
         localProducer.close()
       }
     }
@@ -132,10 +127,8 @@ object KafkaTestHelpers {
 
     require(
       subscription.size() == 1,
-      s"""Only works with a consumer which is subscribed to exactly one topic, actually subscribed to ${
-        theConsumer.subscription
-          .mkString(",")
-      }"""
+      s"""Only works with a consumer which is subscribed to exactly one topic, actually subscribed to ${theConsumer.subscription
+        .mkString(",")}"""
     )
     val topicName: String = subscription.head
 
@@ -160,13 +153,10 @@ object KafkaTestHelpers {
               .toSeq
 
           records.lastOption.foreach { record =>
-            val topicPartition = new TopicPartition(record.topic(), record.partition())
+            val topicPartition    = new TopicPartition(record.topic(), record.partition())
             val offsetAndMetadata = new OffsetAndMetadata(record.offset() + 1)
-            log.debug(
-              s"""Committed offset of ${offsetAndMetadata.offset()} to topic ${
-                topicPartition
-                  .topic()
-              }, partition ${topicPartition.partition()}""")
+            log.debug(s"""Committed offset of ${offsetAndMetadata.offset()} to topic ${topicPartition
+              .topic()}, partition ${topicPartition.partition()}""")
             theConsumer.commitSync(Map(topicPartition -> offsetAndMetadata))
           }
 

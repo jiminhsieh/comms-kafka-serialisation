@@ -18,7 +18,7 @@ import org.apache.kafka.common.serialization.{Deserializer, Serializer, StringDe
 import scala.concurrent.Future
 import scala.reflect.ClassTag
 
-case class Topic[E](configName: String, useMagicByte: Boolean = true)(implicit val kafkaConfig: KafkaClusterConfig) {
+case class Topic[E](configName: String)(implicit val kafkaConfig: KafkaClusterConfig) {
 
   lazy val name: String = {
     kafkaConfig.topics
@@ -76,10 +76,7 @@ case class Topic[E](configName: String, useMagicByte: Boolean = true)(implicit v
     }
 
   private def initialProducerSettings(implicit schema: SchemaFor[E], toRecord: ToRecord[E]) = {
-    if (useMagicByte)
-      KafkaProducer.Conf(new StringSerializer, serializer, kafkaConfig.hosts)
-    else
-      KafkaProducer.Conf(new StringSerializer, serializerNoMagicByte, kafkaConfig.hosts)
+    KafkaProducer.Conf(new StringSerializer, serializer, kafkaConfig.hosts)
   }
 
   private def producerSettings(implicit schemaFor: SchemaFor[E], toRecord: ToRecord[E], classTag: ClassTag[E]) =
@@ -147,13 +144,8 @@ case class Topic[E](configName: String, useMagicByte: Boolean = true)(implicit v
                                       schemaFor: SchemaFor[E],
                                       fromRecord: FromRecord[E],
                                       classTag: ClassTag[E]) = {
-    val chosenDeserializer =
-      if (useMagicByte)
-        deserializer
-      else
-        deserializerNoMagicByte
 
-    ConsumerSettings(actorSystem, new StringDeserializer, chosenDeserializer)
+    ConsumerSettings(actorSystem, new StringDeserializer, deserializer)
       .withBootstrapServers(kafkaConfig.hosts)
       .withGroupId(groupId)
   }
