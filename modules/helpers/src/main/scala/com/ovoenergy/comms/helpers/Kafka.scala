@@ -3,6 +3,7 @@ package com.ovoenergy.comms.helpers
 import com.ovoenergy.comms.model._
 import com.ovoenergy.comms.model.email._
 import com.ovoenergy.comms.model.sms._
+import com.ovoenergy.comms.model.print._
 import com.typesafe.config.Config
 import shapeless.HNil
 
@@ -29,6 +30,9 @@ object Kafka {
     val composedSms = new {
       val v2 = Topic[ComposedSMSV2]("composedSmsV2")
     }
+    val composedPrint = new {
+      val v1 = Topic[ComposedPrint]("composedPrint")
+    }
     val failed = new {
       val v2 = Topic[FailedV2]("failedV2")
     }
@@ -43,6 +47,9 @@ object Kafka {
     }
     val orchestratedSMS = new {
       val v2 = Topic[OrchestratedSMSV2]("orchestratedSmsV2")
+    }
+    val orchestratedPrint = new {
+      val v1 = Topic[OrchestratedPrint]("orchestratedPrint")
     }
     val progressedEmail = new {
       val v2 = Topic[EmailProgressedV2]("progressedEmailV2")
@@ -80,4 +87,5 @@ object Kafka {
 
     val allTopics = triggered.v2 :: triggered.v3 :: cancellationRequested.v1 :: cancellationRequested.v2 :: HNil
   }
+
 }
