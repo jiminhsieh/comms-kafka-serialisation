@@ -1,7 +1,5 @@
-package com.ovoenergy.comms.helpers
+package com.ovoenergy.comms.serialisation
 
-import java.time.Duration
-import java.util.concurrent.TimeUnit
 import scala.concurrent.duration._
 
 case class KafkaRootConfig(kafka: KafkaConfig)
@@ -19,4 +17,5 @@ case class KafkaClusterConfig(hosts: String,
                               ssl: Option[SSLConfig],
                               groupId: String,
                               retry: Option[RetryConfig])
-case class SchemaRegistryConfig(url: String, username: String, password: String)
+
+case class SchemaRegistryConfig(url: String, username: String, password: String, retry: RetryConfig)

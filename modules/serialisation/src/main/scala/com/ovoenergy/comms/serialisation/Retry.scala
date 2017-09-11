@@ -1,4 +1,4 @@
-package com.ovoenergy.comms.helpers
+package com.ovoenergy.comms.serialisation
 
 import akka.actor.Scheduler
 import akka.pattern.after

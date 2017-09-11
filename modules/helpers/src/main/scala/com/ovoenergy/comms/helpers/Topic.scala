@@ -1,12 +1,12 @@
 package com.ovoenergy.comms.helpers
 
 import java.nio.file.Paths
-import java.util.UUID
 
 import akka.actor.ActorSystem
 import akka.kafka.ConsumerSettings
 import cakesolutions.kafka.KafkaProducer
-import com.ovoenergy.comms.helpers.Retry._
+import com.ovoenergy.comms.serialisation.KafkaClusterConfig
+import com.ovoenergy.comms.serialisation.Retry._
 import com.ovoenergy.comms.serialisation.Serialisation._
 import com.ovoenergy.kafka.serialization.avro.SchemaRegistryClientSettings
 import com.sksamuel.avro4s.{FromRecord, SchemaFor, ToRecord}
@@ -33,7 +33,7 @@ case class Topic[E](configName: String)(implicit val kafkaConfig: KafkaClusterCo
       case Some(registrySettings) => {
         val schemaRegistryClientSettings =
           SchemaRegistryClientSettings(registrySettings.url, registrySettings.username, registrySettings.password)
-        avroBinarySchemaRegistrySerializer(schemaRegistryClientSettings, name)
+        avroBinarySchemaRegistrySerializer(schemaRegistryClientSettings, name, registrySettings)
       }
     }
 
@@ -43,7 +43,7 @@ case class Topic[E](configName: String)(implicit val kafkaConfig: KafkaClusterCo
       case Some(registrySettings) => {
         val schemaRegistryClientSettings =
           SchemaRegistryClientSettings(registrySettings.url, registrySettings.username, registrySettings.password)
-        avroBinarySchemaRegistrySerializerNoMagicByte(schemaRegistryClientSettings, name)
+        avroBinarySchemaRegistrySerializerNoMagicByte(schemaRegistryClientSettings, name, registrySettings)
       }
     }
 
@@ -57,7 +57,7 @@ case class Topic[E](configName: String)(implicit val kafkaConfig: KafkaClusterCo
       case Some(registrySettings) => {
         val schemaRegistryClientSettings =
           SchemaRegistryClientSettings(registrySettings.url, registrySettings.username, registrySettings.password)
-        avroBinarySchemaRegistryDeserializer[E](schemaRegistryClientSettings, name)
+        avroBinarySchemaRegistryDeserializer[E](schemaRegistryClientSettings, name, registrySettings)
       }
     }
 
@@ -71,7 +71,7 @@ case class Topic[E](configName: String)(implicit val kafkaConfig: KafkaClusterCo
       case Some(registrySettings) => {
         val schemaRegistryClientSettings =
           SchemaRegistryClientSettings(registrySettings.url, registrySettings.username, registrySettings.password)
-        avroBinarySchemaRegistryDeserializerNoMagicByte[E](schemaRegistryClientSettings, name)
+        avroBinarySchemaRegistryDeserializerNoMagicByte[E](schemaRegistryClientSettings, name, registrySettings)
       }
     }
 
