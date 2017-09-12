@@ -2,6 +2,7 @@ package com.ovoenergy.comms.helpers
 
 import com.ovoenergy.comms.model._
 import com.ovoenergy.comms.model.email._
+import com.ovoenergy.comms.model.print.{ComposedPrint, OrchestratedPrint}
 import com.ovoenergy.comms.model.sms._
 
 trait HasCommName[A] {
@@ -22,9 +23,11 @@ object HasCommName {
   implicit val CancelledHasCommName         = HasCommName.instance[CancelledV2](_.cancellationRequested.commName)
   implicit val OrchestratedEmailHasCommName = HasCommName.instance[OrchestratedEmailV3](_.metadata.commManifest.name)
   implicit val OrchestratedSMSHasCommName   = HasCommName.instance[OrchestratedSMSV2](_.metadata.commManifest.name)
+  implicit val OrchestratedPrintHasCommName = HasCommName.instance[OrchestratedPrint](_.metadata.commManifest.name)
   implicit val SMSProgressedHasCommName     = HasCommName.instance[SMSProgressedV2](_.metadata.commManifest.name)
   implicit val LinkClickedHasCommName       = HasCommName.instance[LinkClickedV2](_.metadata.commManifest.name)
   implicit val EmailProgressedHasCommName   = HasCommName.instance[EmailProgressedV2](_.metadata.commManifest.name)
   implicit val ComposedEmailHasCommName     = HasCommName.instance[ComposedEmailV2](_.metadata.commManifest.name)
   implicit val ComposedSMSHasCommName       = HasCommName.instance[ComposedSMSV2](_.metadata.commManifest.name)
+  implicit val ComposedPrintHasCommName     = HasCommName.instance[ComposedPrint](_.metadata.commManifest.name)
 }
