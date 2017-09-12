@@ -211,13 +211,15 @@ object Serialisation {
     serializer
   }
 
-  private def registerSchema[T](schemaRegistryClient: SchemaRegistryClient, topic: String, schemaRegistryConfig: SchemaRegistryConfig)
-                               (implicit sf: SchemaFor[T]) = {
-    val schema = sf.apply()
+  private def registerSchema[T](schemaRegistryClient: SchemaRegistryClient,
+                                topic: String,
+                                schemaRegistryConfig: SchemaRegistryConfig)(implicit sf: SchemaFor[T]) = {
+
+    val schema                = sf.apply()
     val trySchemaRegistration = () => Try(schemaRegistryClient.register(s"$topic-value", schema))
 
-    val onFailure = {
-      (e: Throwable) => {
+    val onFailure = { (e: Throwable) =>
+      {
         log.debug(s"Schema registration attempt was unsuccessful. ${e.getMessage}")
       }
     }
