@@ -10,6 +10,12 @@ import scala.util.{Failure, Success, Try}
 
 object Retry {
 
+  case class RetryConfig(attempts: Int, initialInterval: FiniteDuration, exponent: Double) {
+    val backoff: (Int) => FiniteDuration = {
+      Retry.Backoff.exponential(initialInterval, exponent)
+    }
+  }
+
   case class Failed(attemptsMade: Int, finalException: Throwable)
       extends Exception(
         s"Operation failed after $attemptsMade attempts. The final exception message was: ${finalException.getMessage}",

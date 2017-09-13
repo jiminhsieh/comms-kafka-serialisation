@@ -1,16 +1,11 @@
-package com.ovoenergy.comms.serialisation
+package com.ovoenergy.comms.helpers
 
-import scala.concurrent.duration._
+import com.ovoenergy.comms.serialisation.Retry.RetryConfig
 
 case class KafkaRootConfig(kafka: KafkaConfig)
 case class StoreConfig(location: String, password: String)
 case class SSLConfig(keystore: StoreConfig, truststore: StoreConfig, keyPassword: String)
 case class KafkaConfig(aiven: KafkaClusterConfig)
-case class RetryConfig(attempts: Int, initialInterval: FiniteDuration, exponent: Double) {
-  val backoff: (Int) => FiniteDuration = {
-    Retry.Backoff.exponential(initialInterval, exponent)
-  }
-}
 case class KafkaClusterConfig(hosts: String,
                               topics: Map[String, String],
                               schemaRegistry: Option[SchemaRegistryConfig],

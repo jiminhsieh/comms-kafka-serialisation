@@ -4,7 +4,7 @@ import com.ovoenergy.comms.model._
 import com.ovoenergy.comms.model.email._
 import com.ovoenergy.comms.model.sms._
 import com.ovoenergy.comms.model.print._
-import com.ovoenergy.comms.serialisation.{KafkaClusterConfig, RetryConfig}
+import com.ovoenergy.comms.serialisation.Retry.RetryConfig
 import com.typesafe.config.Config
 import shapeless.HNil
 

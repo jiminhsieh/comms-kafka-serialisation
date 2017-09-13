@@ -4,6 +4,8 @@ import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import java.nio.charset.StandardCharsets
 import java.util
 
+//import com.ovoenergy.comms.helpers.{RetryConfig, SchemaRegistryConfig}
+import com.ovoenergy.comms.serialisation.Retry.RetryConfig
 import com.ovoenergy.kafka.serialization.avro.{JerseySchemaRegistryClient, SchemaRegistryClientSettings}
 import com.sksamuel.avro4s._
 import org.apache.kafka.common.serialization.{Deserializer, Serializer}
@@ -123,7 +125,7 @@ object Serialisation {
   def avroBinarySchemaRegistryDeserializer[T: FromRecord: SchemaFor: ClassTag](
       schemaRegistryClientSettings: SchemaRegistryClientSettings,
       topic: String,
-      schemaRegistryConfig: SchemaRegistryConfig): Deserializer[Option[T]] = {
+      schemaRegistryConfig: RetryConfig): Deserializer[Option[T]] = {
     val schemaRegistryClient  = JerseySchemaRegistryClient(schemaRegistryClientSettings)
     val baseDeserializer      = avroBinarySchemaIdDeserializer[T](schemaRegistryClient, isKey = false)
     val formattedDeserializer = formatCheckingDeserializer(AvroBinarySchemaId, baseDeserializer)
@@ -159,7 +161,7 @@ object Serialisation {
   def avroBinarySchemaRegistryDeserializerNoMagicByte[T: FromRecord: SchemaFor: ClassTag](
       schemaRegistryClientSettings: SchemaRegistryClientSettings,
       topic: String,
-      schemaRegistryConfig: SchemaRegistryConfig): Deserializer[Option[T]] = {
+      schemaRegistryConfig: RetryConfig): Deserializer[Option[T]] = {
     val schemaRegistryClient = JerseySchemaRegistryClient(schemaRegistryClientSettings)
     val baseDeserializer     = avroBinarySchemaIdDeserializer[T](schemaRegistryClient, isKey = false)
 
@@ -194,37 +196,34 @@ object Serialisation {
   def avroBinarySchemaRegistrySerializer[T: ToRecord: SchemaFor](
       schemaRegistryClientSettings: SchemaRegistryClientSettings,
       topic: String,
-      schemaRegistryConfig: SchemaRegistryConfig): Serializer[T] = {
+      retryConfig: RetryConfig): Serializer[T] = {
     val schemaRegistryClient = JerseySchemaRegistryClient(schemaRegistryClientSettings)
     val serializer           = avroBinarySchemaIdSerializer[T](schemaRegistryClient, isKey = false)
-    registerSchema[T](schemaRegistryClient, topic, schemaRegistryConfig)
+    registerSchema[T](schemaRegistryClient, topic, retryConfig)
     formatSerializer(AvroBinarySchemaId, serializer)
   }
 
   def avroBinarySchemaRegistrySerializerNoMagicByte[T: ToRecord: SchemaFor](
       schemaRegistryClientSettings: SchemaRegistryClientSettings,
       topic: String,
-      schemaRegistryConfig: SchemaRegistryConfig): Serializer[T] = {
+      retryConfig: RetryConfig): Serializer[T] = {
     val schemaRegistryClient = JerseySchemaRegistryClient(schemaRegistryClientSettings)
     val serializer           = avroBinarySchemaIdSerializer[T](schemaRegistryClient, isKey = false)
-    registerSchema[T](schemaRegistryClient, topic, schemaRegistryConfig)
+    registerSchema[T](schemaRegistryClient, topic, retryConfig)
     serializer
   }
 
-  private def registerSchema[T](schemaRegistryClient: SchemaRegistryClient,
-                                topic: String,
-                                schemaRegistryConfig: SchemaRegistryConfig)(implicit sf: SchemaFor[T]) = {
+  private def registerSchema[T](schemaRegistryClient: SchemaRegistryClient, topic: String, retryConfig: RetryConfig)(
+      implicit sf: SchemaFor[T]) = {
 
     val schema                = sf.apply()
     val trySchemaRegistration = () => Try(schemaRegistryClient.register(s"$topic-value", schema))
 
     val onFailure = { (e: Throwable) =>
-      {
-        log.debug(s"Schema registration attempt was unsuccessful. ${e.getMessage}")
-      }
+      log.debug(s"Schema registration attempt was unsuccessful. ${e.getMessage}")
     }
 
-    Retry.retry(schemaRegistryConfig.retry, onFailure)(trySchemaRegistration) match {
+    Retry.retry(retryConfig, onFailure)(trySchemaRegistration) match {
       case Left(l) => {
         log.error("Schema registration failed! Killing the JVM.")
         System.exit(1)
