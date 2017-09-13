@@ -3,8 +3,6 @@ package com.ovoenergy.comms.serialisation
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import java.nio.charset.StandardCharsets
 import java.util
-
-//import com.ovoenergy.comms.helpers.{RetryConfig, SchemaRegistryConfig}
 import com.ovoenergy.comms.serialisation.Retry.RetryConfig
 import com.ovoenergy.kafka.serialization.avro.{JerseySchemaRegistryClient, SchemaRegistryClientSettings}
 import com.sksamuel.avro4s._
@@ -214,7 +212,7 @@ object Serialisation {
   }
 
   private def registerSchema[T](schemaRegistryClient: SchemaRegistryClient, topic: String, retryConfig: RetryConfig)(
-      implicit sf: SchemaFor[T]) = {
+      implicit sf: SchemaFor[T]): Either[Retry.Failed, Retry.Succeeded[T]] = {
 
     val schema                = sf.apply()
     val trySchemaRegistration = () => Try(schemaRegistryClient.register(s"$topic-value", schema))
@@ -228,7 +226,7 @@ object Serialisation {
         log.error("Schema registration failed! Killing the JVM.")
         System.exit(1)
       }
-      case Right(r) => log.debug(s"Schema registration was successful after ${r.attempts} attempts.")
+      case Right(r: Retry.Succeeded[Int]) => log.debug(s"Schema registration was successful after ${r.attempts} attempts.") r
     }
 
   }

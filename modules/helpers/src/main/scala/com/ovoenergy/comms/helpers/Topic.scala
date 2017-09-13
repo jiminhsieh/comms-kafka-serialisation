@@ -5,7 +5,6 @@ import java.nio.file.Paths
 import akka.actor.ActorSystem
 import akka.kafka.ConsumerSettings
 import cakesolutions.kafka.KafkaProducer
-//import KafkaClusterConfig
 import com.ovoenergy.comms.serialisation.Retry._
 import com.ovoenergy.comms.serialisation.Serialisation._
 import com.ovoenergy.kafka.serialization.avro.SchemaRegistryClientSettings
@@ -71,7 +70,7 @@ case class Topic[E](configName: String)(implicit val kafkaConfig: KafkaClusterCo
       case Some(registrySettings) => {
         val schemaRegistryClientSettings =
           SchemaRegistryClientSettings(registrySettings.url, registrySettings.username, registrySettings.password)
-        avroBinarySchemaRegistryDeserializerNoMagicByte[E](schemaRegistryClientSettings, name, registrySettings)
+        avroBinarySchemaRegistryDeserializerNoMagicByte[E](schemaRegistryClientSettings, name, registrySettings.retry)
       }
     }
 

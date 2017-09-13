@@ -3,7 +3,6 @@ package com.ovoenergy.comms.serialisation
 import java.io.IOException
 
 import akka.actor.ActorSystem
-import com.ovoenergy.comms.helpers
 import com.ovoenergy.comms.serialisation.Retry._
 import com.typesafe.config.ConfigFactory
 import org.scalatest._
@@ -26,27 +25,27 @@ class RetrySpec extends FlatSpec with Matchers with BeforeAndAfterAll with Scala
   val immediate = 0 second
 
   it should "succeed if the operation succeeds on the first attempt" in {
-    val result = retry(helpers.RetryConfig(5, immediate, 1), onFailure)(failNtimesThenSucceed(0))
+    val result = retry(RetryConfig(5, immediate, 1), onFailure)(failNtimesThenSucceed(0))
     result should be(Right(Retry.Succeeded("yay", 1)))
   }
 
   it should "succeed if the operation fails on the first attempt but succeeds on the second" in {
-    val result = retry(helpers.RetryConfig(5, immediate, 1), onFailure)(failNtimesThenSucceed(1))
+    val result = retry(RetryConfig(5, immediate, 1), onFailure)(failNtimesThenSucceed(1))
     result should be(Right(Retry.Succeeded("yay", 2)))
   }
 
   it should "succeed if the operation succeeds just before we give up" in {
-    val result = retry(helpers.RetryConfig(5, immediate, 1), onFailure)(failNtimesThenSucceed(4))
+    val result = retry(RetryConfig(5, immediate, 1), onFailure)(failNtimesThenSucceed(4))
     result should be(Right(Retry.Succeeded("yay", 5)))
   }
 
   it should "fail if the operation fails on every attempt" in {
-    val result = retry(helpers.RetryConfig(5, immediate, 1), onFailure)(failNtimesThenSucceed(5))
+    val result = retry(RetryConfig(5, immediate, 1), onFailure)(failNtimesThenSucceed(5))
     result should be(Left(Retry.Failed(5, exception)))
   }
 
   it should "work with attempts == 1" in {
-    val config = helpers.RetryConfig(1, immediate, 1)
+    val config = RetryConfig(1, immediate, 1)
 
     val success = retry(config, onFailure)(failNtimesThenSucceed(0))
     success should be(Right(Retry.Succeeded("yay", 1)))
@@ -77,27 +76,27 @@ class RetrySpec extends FlatSpec with Matchers with BeforeAndAfterAll with Scala
   }
 
   it should "succeed if the operation succeeds on the first attempt" in {
-    val result = retryAsync(helpers.RetryConfig(5, immediate, 1), onFailure)(failNtimesThenSucceed_async(0))
+    val result = retryAsync(RetryConfig(5, immediate, 1), onFailure)(failNtimesThenSucceed_async(0))
     result.futureValue should be("yay")
   }
 
   it should "succeed if the operation fails on the first attempt but succeeds on the second" in {
-    val result = retryAsync(helpers.RetryConfig(5, immediate, 1), onFailure)(failNtimesThenSucceed_async(1))
+    val result = retryAsync(RetryConfig(5, immediate, 1), onFailure)(failNtimesThenSucceed_async(1))
     result.futureValue should be("yay")
   }
 
   it should "succeed if the operation succeeds just before we give up" in {
-    val result = retryAsync(helpers.RetryConfig(5, immediate, 1), onFailure)(failNtimesThenSucceed_async(4))
+    val result = retryAsync(RetryConfig(5, immediate, 1), onFailure)(failNtimesThenSucceed_async(4))
     result.futureValue should be("yay")
   }
 
   it should "fail if the operation fails on every attempt" in {
-    val result = retryAsync(helpers.RetryConfig(5, immediate, 1), onFailure)(failNtimesThenSucceed_async(5))
+    val result = retryAsync(RetryConfig(5, immediate, 1), onFailure)(failNtimesThenSucceed_async(5))
     result.failed.futureValue should be(exception)
   }
 
   it should "work with attempts == 1" in {
-    val config = helpers.RetryConfig(1, immediate, 1)
+    val config = RetryConfig(1, immediate, 1)
 
     val success = retryAsync(config, onFailure)(failNtimesThenSucceed_async(0))
     success.futureValue should be("yay")
