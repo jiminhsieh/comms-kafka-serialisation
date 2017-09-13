@@ -26,9 +26,9 @@ case class Topic[E](configName: String)(implicit val kafkaConfig: KafkaClusterCo
 
   lazy val groupId: String = kafkaConfig.groupId
 
-  def serializer(implicit schema: SchemaFor[E], toRecord: ToRecord[E]): Serializer[E] =
+  def serializer(implicit schema: SchemaFor[E], toRecord: ToRecord[E]): Either[Failed, Serializer[E]] =
     kafkaConfig.schemaRegistry match {
-      case None => avroSerializer[E]
+      case None => Right(avroSerializer[E])
       case Some(registrySettings) => {
         val schemaRegistryClientSettings =
           SchemaRegistryClientSettings(registrySettings.url, registrySettings.username, registrySettings.password)
@@ -36,23 +36,14 @@ case class Topic[E](configName: String)(implicit val kafkaConfig: KafkaClusterCo
       }
     }
 
-  def serializerNoMagicByte(implicit schema: SchemaFor[E], toRecord: ToRecord[E]): Serializer[E] =
-    kafkaConfig.schemaRegistry match {
-      case None => avroSerializer[E]
-      case Some(registrySettings) => {
-        val schemaRegistryClientSettings =
-          SchemaRegistryClientSettings(registrySettings.url, registrySettings.username, registrySettings.password)
-        avroBinarySchemaRegistrySerializerNoMagicByte(schemaRegistryClientSettings, name, registrySettings.retry)
-      }
-    }
 
   def deserializer(implicit schemaFor: SchemaFor[E],
                    fromRecord: FromRecord[E],
-                   classTag: ClassTag[E]): Deserializer[Option[E]] =
+                   classTag: ClassTag[E]): Either[Failed, Deserializer[Option[E]]] =
     kafkaConfig.schemaRegistry match {
       //If the config has a schema registry entry, then we assume it's using avro binary (e.g. aiven).  Otherwise we
       //assumed it's a standard avro string.
-      case None => avroDeserializer[E]
+      case None => Right(avroDeserializer[E])
       case Some(registrySettings) => {
         val schemaRegistryClientSettings =
           SchemaRegistryClientSettings(registrySettings.url, registrySettings.username, registrySettings.password)
@@ -60,39 +51,33 @@ case class Topic[E](configName: String)(implicit val kafkaConfig: KafkaClusterCo
       }
     }
 
-  def deserializerNoMagicByte(implicit schemaFor: SchemaFor[E],
-                              fromRecord: FromRecord[E],
-                              classTag: ClassTag[E]): Deserializer[Option[E]] =
-    kafkaConfig.schemaRegistry match {
-      //If the config has a schema registry entry, then we assume it's using avro binary (e.g. aiven).  Otherwise we
-      //assumed it's a standard avro string.
-      case None => avroDeserializer[E]
-      case Some(registrySettings) => {
-        val schemaRegistryClientSettings =
-          SchemaRegistryClientSettings(registrySettings.url, registrySettings.username, registrySettings.password)
-        avroBinarySchemaRegistryDeserializerNoMagicByte[E](schemaRegistryClientSettings, name, registrySettings.retry)
-      }
+  private def initialProducerSettings(implicit schema: SchemaFor[E], toRecord: ToRecord[E]): Either[Failed, KafkaProducer.Conf[String, E]] = {
+    serializer.right.map{ s =>
+      KafkaProducer.Conf(new StringSerializer, s, kafkaConfig.hosts)
     }
-
-  private def initialProducerSettings(implicit schema: SchemaFor[E], toRecord: ToRecord[E]) = {
-    KafkaProducer.Conf(new StringSerializer, serializer, kafkaConfig.hosts)
   }
 
-  private def producerSettings(implicit schemaFor: SchemaFor[E], toRecord: ToRecord[E], classTag: ClassTag[E]) =
-    kafkaConfig.ssl
-      .map(
-        ssl =>
-          initialProducerSettings
-            .withProperty(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SSL")
-            .withProperty(SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG,
-                          Paths.get(ssl.keystore.location).toAbsolutePath.toString)
-            .withProperty(SslConfigs.SSL_KEYSTORE_TYPE_CONFIG, "PKCS12")
-            .withProperty(SslConfigs.SSL_KEYSTORE_PASSWORD_CONFIG, ssl.keystore.password)
-            .withProperty(SslConfigs.SSL_KEY_PASSWORD_CONFIG, ssl.keyPassword)
-            .withProperty(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, Paths.get(ssl.truststore.location).toString)
-            .withProperty(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, "JKS")
-            .withProperty(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, ssl.truststore.password))
-      .getOrElse(initialProducerSettings)
+  private def producerSettings(implicit schemaFor: SchemaFor[E], toRecord: ToRecord[E], classTag: ClassTag[E]): Either[Failed, KafkaProducer.Conf[String, E]] ={
+    val sslOpt = kafkaConfig.ssl
+    if(sslOpt.isDefined){
+      val ssl = sslOpt.get
+      initialProducerSettings
+        .right
+        .map{_
+          .withProperty(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SSL")
+          .withProperty(SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG,
+            Paths.get(ssl.keystore.location).toAbsolutePath.toString)
+          .withProperty(SslConfigs.SSL_KEYSTORE_TYPE_CONFIG, "PKCS12")
+          .withProperty(SslConfigs.SSL_KEYSTORE_PASSWORD_CONFIG, ssl.keystore.password)
+          .withProperty(SslConfigs.SSL_KEY_PASSWORD_CONFIG, ssl.keyPassword)
+          .withProperty(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, Paths.get(ssl.truststore.location).toString)
+          .withProperty(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, "JKS")
+          .withProperty(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, ssl.truststore.password))
+        }
+    } else{
+     initialProducerSettings
+    }
+  }
 
   def producer(implicit schemaFor: SchemaFor[E],
                toRecord: ToRecord[E],
