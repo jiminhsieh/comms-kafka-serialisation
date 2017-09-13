@@ -20,7 +20,7 @@ object Serialisation {
 
   val log = LoggerFactory.getLogger(getClass)
 
-  def avroDeserializer[T: SchemaFor : FromRecord : ClassTag]: Deserializer[Option[T]] =
+  def avroDeserializer[T: SchemaFor: FromRecord: ClassTag]: Deserializer[Option[T]] =
     new Deserializer[Option[T]] {
       override def configure(configs: util.Map[String, _], isKey: Boolean): Unit = {}
 
@@ -29,7 +29,7 @@ object Serialisation {
       override def deserialize(topic: String, data: Array[Byte]): Option[T] = {
         val bais = new ByteArrayInputStream(data)
         val result = for {
-          input <- Try(AvroJsonInputStream[T](bais))
+          input  <- Try(AvroJsonInputStream[T](bais))
           entity <- input.singleEntity
         } yield entity
 
@@ -52,12 +52,12 @@ object Serialisation {
     * This deserializer should only be used for TriggeredV2 messages.
     * It is generic only to avoid a dependency on the comms-kafka-messages library.
     */
-  def hackyAvroDeserializerForTriggeredV2[T: SchemaFor : FromRecord : ClassTag]: Deserializer[Option[T]] = {
+  def hackyAvroDeserializerForTriggeredV2[T: SchemaFor: FromRecord: ClassTag]: Deserializer[Option[T]] = {
     import io.circe._
     import io.circe.parser._
     val nulledOptionalFields = Json.obj(
-      "deliverAt" -> Json.Null,
-      "expireAt" -> Json.Null,
+      "deliverAt"         -> Json.Null,
+      "expireAt"          -> Json.Null,
       "preferredChannels" -> Json.Null
     )
 
@@ -89,7 +89,7 @@ object Serialisation {
           case Right(fixedBytes) =>
             val bais = new ByteArrayInputStream(fixedBytes)
             val result = for {
-              input <- Try(AvroJsonInputStream[T](bais))
+              input  <- Try(AvroJsonInputStream[T](bais))
               entity <- input.singleEntity
             } yield entity
 
@@ -112,14 +112,14 @@ object Serialisation {
     }
   }
 
-  def avroSerializer[T: SchemaFor : ToRecord]: Serializer[T] =
+  def avroSerializer[T: SchemaFor: ToRecord]: Serializer[T] =
     new Serializer[T] {
       override def configure(configs: util.Map[String, _], isKey: Boolean): Unit = {}
 
       override def close(): Unit = {}
 
       override def serialize(topic: String, data: T): Array[Byte] = {
-        val baos = new ByteArrayOutputStream()
+        val baos   = new ByteArrayOutputStream()
         val output = AvroJsonOutputStream[T](baos)
         output.write(data)
         output.close()
@@ -127,63 +127,59 @@ object Serialisation {
       }
     }
 
-  def avroBinarySchemaRegistryDeserializer[T: FromRecord : SchemaFor : ClassTag](
-                                                                                  schemaRegistryClientSettings: SchemaRegistryClientSettings,
-                                                                                  topic: String,
-                                                                                  schemaRegistryConfig: RetryConfig): Either[Retry.Failed, Deserializer[Option[T]]] = {
-    val schemaRegistryClient = JerseySchemaRegistryClient(schemaRegistryClientSettings)
-    val baseDeserializer = avroBinarySchemaIdDeserializer[T](schemaRegistryClient, isKey = false)
+  def avroBinarySchemaRegistryDeserializer[T: FromRecord: SchemaFor: ClassTag](
+      schemaRegistryClientSettings: SchemaRegistryClientSettings,
+      topic: String,
+      schemaRegistryConfig: RetryConfig): Either[Retry.Failed, Deserializer[Option[T]]] = {
+    val schemaRegistryClient                   = JerseySchemaRegistryClient(schemaRegistryClientSettings)
+    val baseDeserializer                       = avroBinarySchemaIdDeserializer[T](schemaRegistryClient, isKey = false)
     val formattedDeserializer: Deserializer[T] = formatCheckingDeserializer(AvroBinarySchemaId, baseDeserializer)
 
-    registerSchema[T](schemaRegistryClient, topic, schemaRegistryConfig)
-      .right.map { _ =>
-
+    registerSchema[T](schemaRegistryClient, topic, schemaRegistryConfig).right.map { _ =>
       new Deserializer[Option[T]] {
-            override def configure(configs: util.Map[String, _], isKey: Boolean) {
-              formattedDeserializer.configure(configs, isKey)
-            }
+        override def configure(configs: util.Map[String, _], isKey: Boolean) {
+          formattedDeserializer.configure(configs, isKey)
+        }
 
-            override def close(): Unit = formattedDeserializer.close()
+        override def close(): Unit = formattedDeserializer.close()
 
-            override def deserialize(topic: String, data: Array[Byte]): Option[T] = {
-              val result = Try {
-                formattedDeserializer.deserialize(topic, data)
-              }
+        override def deserialize(topic: String, data: Array[Byte]): Option[T] = {
+          val result = Try {
+            formattedDeserializer.deserialize(topic, data)
+          }
 
-              result.failed.foreach { e =>
-                val className = implicitly[ClassTag[T]].runtimeClass.getSimpleName
-                log.warn(
-                  s"""Skippping event because it could not be deserialized to $className
+          result.failed.foreach { e =>
+            val className = implicitly[ClassTag[T]].runtimeClass.getSimpleName
+            log.warn(
+              s"""Skippping event because it could not be deserialized to $className
 
                      |Event:
                      |${new String(data, StandardCharsets.UTF_8)}
-            """.stripMargin
-                  ,
-                  e
-                )
-              }
-              result.
-            toOption
+            """.stripMargin,
+              e
+            )
+          }
+          result.toOption
         }
       }
     }
   }
 
-  def avroBinarySchemaRegistrySerializer[T: ToRecord : SchemaFor](
-                                                                   schemaRegistryClientSettings: SchemaRegistryClientSettings,
-                                                                   topic: String,
-                                                                   retryConfig: RetryConfig) = {
+  def avroBinarySchemaRegistrySerializer[T: ToRecord: SchemaFor](
+      schemaRegistryClientSettings: SchemaRegistryClientSettings,
+      topic: String,
+      retryConfig: RetryConfig) = {
     val schemaRegistryClient = JerseySchemaRegistryClient(schemaRegistryClientSettings)
-    val serializer = avroBinarySchemaIdSerializer[T](schemaRegistryClient, isKey = false)
+    val serializer           = avroBinarySchemaIdSerializer[T](schemaRegistryClient, isKey = false)
 
-    registerSchema[T](schemaRegistryClient, topic, retryConfig)
-      .right.map(_ => formatSerializer(AvroBinarySchemaId, serializer))
+    registerSchema[T](schemaRegistryClient, topic, retryConfig).right.map(_ =>
+      formatSerializer(AvroBinarySchemaId, serializer))
   }
 
   private def registerSchema[T](schemaRegistryClient: SchemaRegistryClient, topic: String, retryConfig: RetryConfig)(
-    implicit sf: SchemaFor[T]): Either[Retry.Failed, Retry.Succeeded[Int]] = {
+      implicit sf: SchemaFor[T]): Either[Retry.Failed, Retry.Succeeded[Int]] = {
 
-    val schema = sf.apply()
+    val schema                = sf.apply()
     val trySchemaRegistration = () => Try(schemaRegistryClient.register(s"$topic-value", schema))
 
     val onFailure = { (e: Throwable) =>
