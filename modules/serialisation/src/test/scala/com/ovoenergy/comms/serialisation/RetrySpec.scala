@@ -1,13 +1,14 @@
+package com.ovoenergy.comms.serialisation
+
 import java.io.IOException
 
 import akka.actor.ActorSystem
-import com.ovoenergy.comms.helpers.{Retry, RetryConfig}
-import com.ovoenergy.comms.helpers.Retry._
+import com.ovoenergy.comms.serialisation.Retry._
 import com.typesafe.config.ConfigFactory
 import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
-import scala.concurrent.ExecutionContext.Implicits.global
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.language.postfixOps

@@ -1,4 +1,4 @@
-package com.ovoenergy.comms.helpers
+package com.ovoenergy.comms.serialisation
 
 import akka.actor.Scheduler
 import akka.pattern.after
@@ -9,6 +9,12 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 object Retry {
+
+  case class RetryConfig(attempts: Int, initialInterval: FiniteDuration, exponent: Double) {
+    val backoff: (Int) => FiniteDuration = {
+      Retry.Backoff.exponential(initialInterval, exponent)
+    }
+  }
 
   case class Failed(attemptsMade: Int, finalException: Throwable)
       extends Exception(

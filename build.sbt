@@ -34,6 +34,7 @@ lazy val serialisation = Project("comms-kafka-serialisation", file("modules/seri
       "com.ovoenergy"       %% "kafka-serialization-core"   % "0.1.18",
       "com.ovoenergy"       %% "kafka-serialization-avro4s" % "0.1.18",
       "org.slf4j"           % "slf4j-api"                   % "1.7.21",
+      "com.typesafe.akka"   %% "akka-stream-kafka"          % "0.16",
       "org.scalatest"       %% "scalatest"                  % "3.0.3" % Test,
       "com.ovoenergy"       %% "comms-kafka-messages"       % "1.31" % Test,
       "org.slf4j"           % "slf4j-simple"                % "1.7.21" % Test
