@@ -12,7 +12,7 @@ import com.ovoenergy.kafka.serialization.avro4s._
 import com.ovoenergy.kafka.serialization.core.Format.AvroBinarySchemaId
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import com.ovoenergy.kafka.serialization.core._
-
+import cats.implicits._
 import scala.reflect.ClassTag
 import scala.util.Try
 
@@ -62,7 +62,7 @@ object Serialisation {
     )
 
     def addMissingOptionalFields(data: Array[Byte]): Either[ParsingFailure, Array[Byte]] = {
-      parse(new String(data, StandardCharsets.UTF_8)).right.map { originalJson =>
+      parse(new String(data, StandardCharsets.UTF_8)).map { originalJson =>
         // Note: the order is important when calling `deepMerge`.
         // Values in `originalJson` take precedence over values in `nulledOptionalFields`.
         val fixedJson = nulledOptionalFields.deepMerge(originalJson)
@@ -135,7 +135,7 @@ object Serialisation {
     val baseDeserializer                       = avroBinarySchemaIdDeserializer[T](schemaRegistryClient, isKey = false)
     val formattedDeserializer: Deserializer[T] = formatCheckingDeserializer(AvroBinarySchemaId, baseDeserializer)
 
-    registerSchema[T](schemaRegistryClient, topic, schemaRegistryConfig).right.map { _ =>
+    registerSchema[T](schemaRegistryClient, topic, schemaRegistryConfig).map { _ =>
       new Deserializer[Option[T]] {
         override def configure(configs: util.Map[String, _], isKey: Boolean) {
           formattedDeserializer.configure(configs, isKey)
@@ -172,8 +172,9 @@ object Serialisation {
     val schemaRegistryClient = JerseySchemaRegistryClient(schemaRegistryClientSettings)
     val serializer           = avroBinarySchemaIdSerializer[T](schemaRegistryClient, isKey = false)
 
-    registerSchema[T](schemaRegistryClient, topic, retryConfig).right.map(_ =>
-      formatSerializer(AvroBinarySchemaId, serializer))
+    registerSchema[T](schemaRegistryClient, topic, retryConfig).map { _ =>
+      formatSerializer(AvroBinarySchemaId, serializer)
+    }
   }
 
   private def registerSchema[T](schemaRegistryClient: SchemaRegistryClient, topic: String, retryConfig: RetryConfig)(

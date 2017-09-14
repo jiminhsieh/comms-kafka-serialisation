@@ -7,6 +7,7 @@ import java.util.UUID
 import cakesolutions.kafka.KafkaConsumer
 import cakesolutions.kafka.KafkaConsumer.Conf
 import com.ovoenergy.comms.helpers.Topic
+import com.ovoenergy.comms.serialisation.Retry.Failed
 import com.sksamuel.avro4s.{FromRecord, SchemaFor, ToRecord}
 import org.apache.kafka.clients.CommonClientConfigs
 import org.apache.kafka.clients.consumer.{OffsetAndMetadata, KafkaConsumer => JKafkaConsumer}
@@ -14,10 +15,8 @@ import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.TopicPartition
 import org.apache.kafka.common.config.SslConfigs
 import org.apache.kafka.common.serialization.StringDeserializer
-
 import scala.concurrent.ExecutionContext.Implicits.global
 import org.slf4j.LoggerFactory
-
 import scala.annotation.tailrec
 import scala.concurrent.duration.{Deadline, FiniteDuration}
 import scala.reflect.ClassTag
@@ -30,6 +29,15 @@ object KafkaTestHelpers {
   def loggerName: String = getClass.getSimpleName.reverse.dropWhile(_ == '$').reverse
 
   lazy val log = LoggerFactory.getLogger(loggerName)
+
+  def throwExceptionIfFailed[T, Result](eitherVal: Either[Failed, T]): T = {
+    eitherVal match {
+      case Left(failed) =>
+        throw new Exception(
+          s"Failed to create consumer: ${failed.attemptsMade} attempts made, with final exception: ${failed.finalException.getMessage}")
+      case Right(result) => result
+    }
+  }
 
   def withThrowawayConsumerFor[E1: SchemaFor: FromRecord: ClassTag, R](topic: Topic[E1])(
       f: JKafkaConsumer[String, Option[E1]] => R): R = {
@@ -64,9 +72,10 @@ object KafkaTestHelpers {
                                                 fromRecord: FromRecord[E],
                                                 classTag: ClassTag[E]): JKafkaConsumer[String, Option[E]] = {
 
+      val deserializer = throwExceptionIfFailed(topic.deserializer)
       val initialConsumerSettings =
         Conf[String, Option[E]](new StringDeserializer,
-                                topic.deserializer,
+                                deserializer,
                                 topic.kafkaConfig.hosts,
                                 UUID.randomUUID().toString)
       val consumerSettings = topic.kafkaConfig.ssl
@@ -107,7 +116,7 @@ object KafkaTestHelpers {
     def publishOnce(event: E, timeout: Duration = 5.seconds)(implicit schemaFor: SchemaFor[E],
                                                              toRecord: ToRecord[E],
                                                              classTag: ClassTag[E]) = {
-      val localProducer = topic.producer
+      val localProducer = throwExceptionIfFailed(topic.producer)
       try {
         val future = localProducer.send(new ProducerRecord[String, E](topic.name, event))
         // Enforce blocking behaviour

@@ -13,7 +13,7 @@ import org.apache.kafka.clients.CommonClientConfigs
 import org.apache.kafka.clients.producer.{ProducerRecord, RecordMetadata}
 import org.apache.kafka.common.config.SslConfigs
 import org.apache.kafka.common.serialization.{Deserializer, Serializer, StringDeserializer, StringSerializer}
-
+import cats.implicits._
 import scala.concurrent.Future
 import scala.reflect.ClassTag
 
@@ -60,44 +60,38 @@ case class Topic[E](configName: String)(implicit val kafkaConfig: KafkaClusterCo
   private def producerSettings(implicit schemaFor: SchemaFor[E],
                                toRecord: ToRecord[E],
                                classTag: ClassTag[E]): Either[Failed, KafkaProducer.Conf[String, E]] = {
-    val sslOpt = kafkaConfig.ssl
-    if (sslOpt.isDefined) {
-      val ssl = sslOpt.get
-      handleEither(initialProducerSettings) { settings =>
-        settings
-          .withProperty(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SSL")
-          .withProperty(SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG,
-                        Paths.get(ssl.keystore.location).toAbsolutePath.toString)
-          .withProperty(SslConfigs.SSL_KEYSTORE_TYPE_CONFIG, "PKCS12")
-          .withProperty(SslConfigs.SSL_KEYSTORE_PASSWORD_CONFIG, ssl.keystore.password)
-          .withProperty(SslConfigs.SSL_KEY_PASSWORD_CONFIG, ssl.keyPassword)
-          .withProperty(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, Paths.get(ssl.truststore.location).toString)
-          .withProperty(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, "JKS")
-          .withProperty(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, ssl.truststore.password)
+    kafkaConfig.ssl
+      .map { ssl =>
+        initialProducerSettings.map { settings =>
+          settings
+            .withProperty(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SSL")
+            .withProperty(SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG,
+                          Paths.get(ssl.keystore.location).toAbsolutePath.toString)
+            .withProperty(SslConfigs.SSL_KEYSTORE_TYPE_CONFIG, "PKCS12")
+            .withProperty(SslConfigs.SSL_KEYSTORE_PASSWORD_CONFIG, ssl.keystore.password)
+            .withProperty(SslConfigs.SSL_KEY_PASSWORD_CONFIG, ssl.keyPassword)
+            .withProperty(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, Paths.get(ssl.truststore.location).toString)
+            .withProperty(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, "JKS")
+            .withProperty(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, ssl.truststore.password)
+        }
       }
-    } else {
-      initialProducerSettings
-    }
+      .getOrElse(initialProducerSettings)
   }
 
   def producer(implicit schemaFor: SchemaFor[E],
                toRecord: ToRecord[E],
                classTag: ClassTag[E]): Either[Failed, KafkaProducer[String, E]] = {
-    handleEither(producerSettings)((settings: KafkaProducer.Conf[String, E]) => KafkaProducer.apply(settings))
+    producerSettings.map(settings => KafkaProducer.apply(settings))
   }
-
-  private def handleEither[A, B](eitherVal: Either[Failed, A])(f: A => B): Either[Failed, B] =
-    eitherVal.right.map(r => f(r))
 
   def publisher(implicit schemaFor: SchemaFor[E],
                 toRecord: ToRecord[E],
                 classTag: ClassTag[E]): Either[Failed, (E) => Future[RecordMetadata]] = {
     val localProducer = producer
 
-    handleEither(localProducer) { producer => (event: E) =>
+    localProducer.map { producer => (event: E) =>
       producer.send(new ProducerRecord[String, E](name, event))
     }
-
   }
 
   def retryPublisher(implicit schemaFor: SchemaFor[E],
@@ -111,7 +105,7 @@ case class Topic[E](configName: String)(implicit val kafkaConfig: KafkaClusterCo
     kafkaConfig.retry match {
       case None => throw new Exception("Unable to find config for retry")
       case Some(retry) => {
-        handleEither(localProducer) { producer => (event: E) =>
+        localProducer.map { producer => (event: E) =>
           {
             implicit val scheduler = actorSystem.scheduler
             import scala.concurrent.ExecutionContext.Implicits.global
@@ -136,8 +130,7 @@ case class Topic[E](configName: String)(implicit val kafkaConfig: KafkaClusterCo
                                       schemaFor: SchemaFor[E],
                                       fromRecord: FromRecord[E],
                                       classTag: ClassTag[E]): Either[Failed, ConsumerSettings[String, Option[E]]] = {
-
-    handleEither(deserializer) {
+    deserializer.map {
       ConsumerSettings
         .apply(actorSystem, new StringDeserializer, _)
         .withBootstrapServers(kafkaConfig.hosts)
@@ -151,23 +144,21 @@ case class Topic[E](configName: String)(implicit val kafkaConfig: KafkaClusterCo
                        classTag: ClassTag[E]): Either[Failed, ConsumerSettings[String, Option[E]]] = {
 
     val sslOpt = kafkaConfig.ssl
-
-    if (sslOpt.isDefined) {
-      val ssl = sslOpt.get
-      handleEither(initialConsumerSettings) { settings =>
-        settings
-          .withProperty(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SSL")
-          .withProperty(SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG,
-                        Paths.get(ssl.keystore.location).toAbsolutePath.toString)
-          .withProperty(SslConfigs.SSL_KEYSTORE_TYPE_CONFIG, "PKCS12")
-          .withProperty(SslConfigs.SSL_KEYSTORE_PASSWORD_CONFIG, ssl.keystore.password)
-          .withProperty(SslConfigs.SSL_KEY_PASSWORD_CONFIG, ssl.keyPassword)
-          .withProperty(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, Paths.get(ssl.truststore.location).toString)
-          .withProperty(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, "JKS")
-          .withProperty(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, ssl.truststore.password)
+    sslOpt
+      .map { ssl =>
+        initialConsumerSettings.map { settings =>
+          settings
+            .withProperty(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SSL")
+            .withProperty(SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG,
+                          Paths.get(ssl.keystore.location).toAbsolutePath.toString)
+            .withProperty(SslConfigs.SSL_KEYSTORE_TYPE_CONFIG, "PKCS12")
+            .withProperty(SslConfigs.SSL_KEYSTORE_PASSWORD_CONFIG, ssl.keystore.password)
+            .withProperty(SslConfigs.SSL_KEY_PASSWORD_CONFIG, ssl.keyPassword)
+            .withProperty(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, Paths.get(ssl.truststore.location).toString)
+            .withProperty(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, "JKS")
+            .withProperty(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, ssl.truststore.password)
+        }
       }
-    } else {
-      initialConsumerSettings
-    }
+      .getOrElse(initialConsumerSettings)
   }
 }
