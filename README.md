@@ -56,13 +56,15 @@ Or for binary avro (de)serialisers with schema registry support:
  import com.ovoenergy.kafka.serialization.avro.SchemaRegistryClientSettings
 
  val schemaRegistrySettings = SchemaRegistryClientSettings("schemaRegistryEndpoint:666", Authentication.None, 10, 5)
- val deserializer = Serialisation.avroBinarySchemaRegistryDeserializer[MyLovelyKafkaEvent](schemaRegistrySettings, false, "my-topic")
+ val deserializerMaybe: Either[Retry.Failed, Deserializer[Option[T]]]= Serialisation.avroBinarySchemaRegistryDeserializer[MyLovelyKafkaEvent](schemaRegistrySettings, false, "my-topic")
+ // For the sake of a simple example ;)
+ val deserializer: Deserializer[Option[T]] = deserializerMaybe.right.get
  val result: Option[MyLovelyKafkaEvent] = deserializer.deserialize("my-topic", messageBytes)
  ```
  
 Note that this functionality is a thin wrapper around the kafka-serialization library, more information on how the schema registry works on its [readme](https://github.com/ovotech/kafka-serialization). The only
 difference in functionality is that this wrapper will register the schema with the schema registry immediately on startup when the de(serialiser) is created rather than lazily, and deserialised values will be 
-optional, returning Optional.None when deserialisation fails.
+optional, returning Optional.None when deserialisation fails. Additionally, if the call to register the schema fails on creation of a serialiser or deserialiser this will return a Retry.Failed
 
 
 ### Helpers
@@ -73,8 +75,8 @@ This is a collection of classes for dealing with the kafka topics.  It enumerate
       import com.ovoenergy.comms.helpers.{Kafka, Topic}
       import com.ovoenergy.comms.serialisation.Codecs._
 
-      val consumer: KafkaConsumer[String, Option[TriggeredV3]] = Kafka.aiven.triggered.v3.consumer
-      val producer: KafkaProducer[String, TriggeredV2] = Kafka.legacy.triggered.v2.producer
+      val consumer: Either[Retry.Failed, KafkaConsumer[String, Option[TriggeredV3]]] = Kafka.aiven.triggered.v3.consumer
+      val producer: Either[Retry.Failed, KafkaProducer[String, TriggeredV2]] = Kafka.legacy.triggered.v2.producer
   ```
     
 
