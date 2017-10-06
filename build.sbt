@@ -34,7 +34,7 @@ lazy val serialisation = Project("comms-kafka-serialisation", file("modules/seri
       "com.ovoenergy"       %% "kafka-serialization-core"   % "0.1.18",
       "com.ovoenergy"       %% "kafka-serialization-avro4s" % "0.1.18",
       "org.slf4j"           % "slf4j-api"                   % "1.7.21",
-      "com.typesafe.akka"   %% "akka-stream-kafka"          % "0.16",
+      "com.typesafe.akka"   %% "akka-stream-kafka"          % "0.17",
       "org.scalatest"       %% "scalatest"                  % "3.0.3" % Test,
       "com.ovoenergy"       %% "comms-kafka-messages"       % "1.31" % Test,
       "org.slf4j"           % "slf4j-simple"                % "1.7.21" % Test
@@ -54,7 +54,7 @@ lazy val helpers = Project("comms-kafka-helpers", file("modules/helpers"))
       "com.ovoenergy"         %% "comms-kafka-messages" % "1.31",
       "com.chuusai"           %% "shapeless"            % "2.3.2",
       "net.cakesolutions"     %% "scala-kafka-client"   % "0.10.2.2",
-      "com.typesafe.akka"     %% "akka-stream-kafka"    % "0.16",
+      "com.typesafe.akka"     %% "akka-stream-kafka"    % "0.17",
       "org.scalatest"         %% "scalatest"            % "3.0.3" % Test
     )
   )
@@ -68,7 +68,7 @@ lazy val testHelpers = Project("comms-kafka-test-helpers", file("modules/test-he
     ),
     libraryDependencies ++= Seq(
       "com.chuusai"                %% "shapeless"                 % "2.3.2",
-      "net.manub"                  %% "scalatest-embedded-kafka"  % "0.13.1",
+      "net.manub"                  %% "scalatest-embedded-kafka"  % "0.15.1",
       "io.confluent"               % "kafka-schema-registry"      % "3.2.1" exclude ("org.apache.kafka", "kafka_2.11"),
       "org.scalacheck"             %% "scalacheck"                % "1.13.4",
       "com.github.alexarchambault" %% "scalacheck-shapeless_1.13" % "1.1.4"
