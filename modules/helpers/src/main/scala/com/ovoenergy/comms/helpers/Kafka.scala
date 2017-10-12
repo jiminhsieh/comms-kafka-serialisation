@@ -27,9 +27,11 @@ object Kafka {
     }
     val composedEmail = new {
       val v2 = Topic[ComposedEmailV2]("composedEmailV2")
+      val v3 = Topic[ComposedEmailV3]("composedEmailV3")
     }
     val composedSms = new {
       val v2 = Topic[ComposedSMSV2]("composedSmsV2")
+      val v3 = Topic[ComposedSMSV3]("composedSmsV3")
     }
     val composedPrint = new {
       val v1 = Topic[ComposedPrint]("composedPrint")
