@@ -73,7 +73,7 @@ object Kafka {
       val v2 = Topic[CancelledV2]("cancelledV2")
     }
 
-    val allTopics = triggered.v3 :: composedEmail.v2 :: composedSms.v2 :: failed.v2 :: issuedForDelivery.v2 ::
+    val allTopics = triggered.v3 :: composedEmail.v2 :: composedEmail.v3 :: composedSms.v2 :: composedSms.v3 :: failed.v2 :: issuedForDelivery.v2 ::
       orchestratedEmail.v3 :: orchestratedSMS.v2 :: progressedEmail.v2 :: progressedSMS.v2 :: linkClicked.v2 ::
       cancellationRequested.v2 :: failedCancellation.v2 :: cancelled.v2 :: HNil
   }
