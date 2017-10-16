@@ -27,7 +27,7 @@ object HasCommName {
   implicit val SMSProgressedHasCommName     = HasCommName.instance[SMSProgressedV2](_.metadata.commManifest.name)
   implicit val LinkClickedHasCommName       = HasCommName.instance[LinkClickedV2](_.metadata.commManifest.name)
   implicit val EmailProgressedHasCommName   = HasCommName.instance[EmailProgressedV2](_.metadata.commManifest.name)
-  implicit val ComposedEmailHasCommName     = HasCommName.instance[ComposedEmailV2](_.metadata.commManifest.name)
-  implicit val ComposedSMSHasCommName       = HasCommName.instance[ComposedSMSV2](_.metadata.commManifest.name)
+  implicit val ComposedEmailHasCommName     = HasCommName.instance[ComposedEmailV3](_.metadata.commManifest.name)
+  implicit val ComposedSMSHasCommName       = HasCommName.instance[ComposedSMSV3](_.metadata.commManifest.name)
   implicit val ComposedPrintHasCommName     = HasCommName.instance[ComposedPrint](_.metadata.commManifest.name)
 }
