@@ -28,8 +28,8 @@ Then add a dependency on the library:
 
 ```
 libraryDependencies += Seq("com.ovoenergy" %% "comms-kafka-serialisation" % "version",
-"com.ovoenergy" %% "comms-kafka-cakesolutions-helpers" % "version",
-"com.ovoenergy" %% "comms-kafka-akka-helpers" % "version"
+"com.ovoenergy" %% "comms-kafka-helpers" % "version",
+"com.ovoenergy" %% "comms-kafka-test-helpers" % "version"
 )
 ```
 
