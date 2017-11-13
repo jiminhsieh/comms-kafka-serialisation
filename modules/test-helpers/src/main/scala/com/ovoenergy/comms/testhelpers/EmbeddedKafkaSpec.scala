@@ -59,7 +59,6 @@ trait EmbeddedKafkaSpec extends EmbeddedKafka with BeforeAndAfterAll { this: Sui
 
     EmbeddedSchemaRegistry.start()
 
-    makeTopicsInConfig("legacy")(legacyConfig)
     makeTopicsInConfig("aiven")(aivenConfig)
   }
 

@@ -79,17 +79,4 @@ object Kafka {
       cancelled.v2 :: HNil
   }
 
-  def legacy(implicit config: Config) = new CommsKafkaCluster("legacy") {
-    val triggered = new {
-      val v2 = Topic[TriggeredV2]("triggeredV2")
-      val v3 = Topic[TriggeredV3]("triggeredV3")
-    }
-    val cancellationRequested = new {
-      val v1 = Topic[CancellationRequested]("cancellationRequested")
-      val v2 = Topic[CancellationRequestedV2]("cancellationRequestedV2")
-    }
-
-    val allTopics = triggered.v2 :: triggered.v3 :: cancellationRequested.v1 :: cancellationRequested.v2 :: HNil
-  }
-
 }

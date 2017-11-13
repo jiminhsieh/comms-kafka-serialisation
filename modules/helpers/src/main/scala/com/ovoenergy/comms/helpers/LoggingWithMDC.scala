@@ -1,6 +1,6 @@
 package com.ovoenergy.comms.helpers
 
-import com.ovoenergy.comms.model.{CancellationRequested, Cancelled, LoggableEvent, TriggeredV2}
+import com.ovoenergy.comms.model.{CancellationRequested, LoggableEvent}
 import org.slf4j.{LoggerFactory, MDC}
 
 trait TraceTokenProvider[E] {
@@ -103,6 +103,7 @@ object EventLogger extends EventLoggerL1 {
   private def traceTokenExtractor[T](f: T => String) = new TraceTokenProvider[T] {
     override def traceToken(e: T): String = f(e)
   }
-  implicit val triggeredV2Extractor  = traceTokenExtractor[TriggeredV2](_.metadata.traceToken)
-  implicit val cancellationRequested = traceTokenExtractor[CancellationRequested](_.metadata.traceToken)
+
+  implicit val cancellationRequested: TraceTokenProvider[CancellationRequested] =
+    traceTokenExtractor[CancellationRequested](_.metadata.traceToken)
 }
