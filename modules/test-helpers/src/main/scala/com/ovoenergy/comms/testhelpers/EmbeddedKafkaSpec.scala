@@ -38,12 +38,12 @@ trait EmbeddedKafkaSpec extends EmbeddedKafka with BeforeAndAfterAll { this: Sui
   private def cleanLogs(directories: Directory*): Unit = {
     directories.foreach(_.deleteRecursively())
   }
-  private val zkLogsDirAiven     = Directory.makeTemp("zookeeper-logs-aiven")
-  private val kafkaLogsDirAiven  = Directory.makeTemp("kafka-logs-aiven")
+  private val zkLogsDirAiven    = Directory.makeTemp("zookeeper-logs-aiven")
+  private val kafkaLogsDirAiven = Directory.makeTemp("kafka-logs-aiven")
 
-  val aivenConfig                                = EmbeddedKafkaConfig(6004, 6001)
-  var aivenZookeeper: Option[ServerCnxnFactory]  = None
-  var aivenKafkaBroker: Option[KafkaServer]      = None
+  implicit val aivenConfig: EmbeddedKafkaConfig = EmbeddedKafkaConfig(6004, 6001)
+  var aivenZookeeper: Option[ServerCnxnFactory] = None
+  var aivenKafkaBroker: Option[KafkaServer]     = None
 
   override protected def beforeAll() {
 
