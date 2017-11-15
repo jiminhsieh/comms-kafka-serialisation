@@ -70,14 +70,14 @@ optional, returning Optional.None when deserialisation fails. Additionally, if t
 
 ### Helpers
 
-This is a collection of classes for dealing with the kafka topics.  It enumerates all of the topics and events on offer and allows users to make type-safe producers and consumers for either aiven or legacy.
+This is a collection of classes for dealing with the kafka topics.  It enumerates all of the topics and events on offer and allows users to make type-safe producers and consumers for aiven.
   
   ```
       import com.ovoenergy.comms.helpers.{Kafka, Topic}
       import com.ovoenergy.comms.serialisation.Codecs._
 
       val consumer: Either[Retry.Failed, KafkaConsumer[String, Option[TriggeredV3]]] = Kafka.aiven.triggered.v3.consumer
-      val producer: Either[Retry.Failed, KafkaProducer[String, TriggeredV2]] = Kafka.legacy.triggered.v2.producer
+      val producer: Either[Retry.Failed, KafkaProducer[String, TriggeredV3]] = Kafka.aiven.triggered.v3.producer
   ```
     
 
@@ -98,7 +98,7 @@ Currently this consists of a utility to iterate over available topics
             println(topic.name)
           }
         }
-      TopicListTraverser(Kafka.legacy.allTopics, visitor)
+      TopicListTraverser(Kafka.aiven.allTopics, visitor)
   ```
 
 

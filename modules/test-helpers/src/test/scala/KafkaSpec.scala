@@ -39,9 +39,6 @@ class KafkaSpec extends FlatSpec with EmbeddedKafkaSpec with Matchers with Scala
     }
   }
 
-  behavior of "legacy cluster"
-  TraverseTopicList(Kafka.legacy.allTopics, visitor)
-
   behavior of "aiven cluster"
   TraverseTopicList(Kafka.aiven.allTopics, visitor)
 }

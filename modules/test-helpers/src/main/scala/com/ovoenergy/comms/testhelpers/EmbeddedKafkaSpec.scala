@@ -38,35 +38,24 @@ trait EmbeddedKafkaSpec extends EmbeddedKafka with BeforeAndAfterAll { this: Sui
   private def cleanLogs(directories: Directory*): Unit = {
     directories.foreach(_.deleteRecursively())
   }
-  private val zkLogsDirLegacy    = Directory.makeTemp("zookeeper-logs-legacy")
-  private val kafkaLogsDirLegacy = Directory.makeTemp("kafka-logs-legacy")
-  private val zkLogsDirAiven     = Directory.makeTemp("zookeeper-logs-aiven")
-  private val kafkaLogsDirAiven  = Directory.makeTemp("kafka-logs-aiven")
+  private val zkLogsDirAiven    = Directory.makeTemp("zookeeper-logs-aiven")
+  private val kafkaLogsDirAiven = Directory.makeTemp("kafka-logs-aiven")
 
-  val legacyConfig                               = EmbeddedKafkaConfig(6003, 6000)
-  val aivenConfig                                = EmbeddedKafkaConfig(6004, 6001)
-  var legacyZookeeper: Option[ServerCnxnFactory] = None
-  var legacyKafkaBroker: Option[KafkaServer]     = None
-  var aivenZookeeper: Option[ServerCnxnFactory]  = None
-  var aivenKafkaBroker: Option[KafkaServer]      = None
+  implicit val aivenConfig: EmbeddedKafkaConfig = EmbeddedKafkaConfig(6004, 6001)
+  var aivenZookeeper: Option[ServerCnxnFactory] = None
+  var aivenKafkaBroker: Option[KafkaServer]     = None
 
   override protected def beforeAll() {
-    legacyZookeeper = Some(startZooKeeper(legacyConfig.zooKeeperPort, zkLogsDirLegacy))
-    legacyKafkaBroker = Some(startKafka(legacyConfig, kafkaLogsDirLegacy))
 
     aivenZookeeper = Some(startZooKeeper(aivenConfig.zooKeeperPort, zkLogsDirAiven))
     aivenKafkaBroker = Some(startKafka(aivenConfig, kafkaLogsDirAiven))
 
     EmbeddedSchemaRegistry.start()
 
-    makeTopicsInConfig("legacy")(legacyConfig)
     makeTopicsInConfig("aiven")(aivenConfig)
   }
 
   override protected def afterAll() {
-    legacyKafkaBroker.foreach(_.shutdown())
-    legacyKafkaBroker.foreach(_.awaitShutdown())
-    legacyZookeeper.foreach(_.shutdown())
 
     aivenKafkaBroker.foreach(_.shutdown())
     aivenKafkaBroker.foreach(_.awaitShutdown())
@@ -74,7 +63,7 @@ trait EmbeddedKafkaSpec extends EmbeddedKafka with BeforeAndAfterAll { this: Sui
 
     EmbeddedSchemaRegistry.stop()
 
-    cleanLogs(zkLogsDirLegacy, zkLogsDirAiven, kafkaLogsDirLegacy, kafkaLogsDirAiven)
+    cleanLogs(zkLogsDirAiven, kafkaLogsDirAiven)
   }
 
   private def makeTopicsInConfig(kafkaCluster: String)(implicit embeddedKafkaConfig: EmbeddedKafkaConfig) {
