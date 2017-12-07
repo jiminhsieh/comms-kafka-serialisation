@@ -4,7 +4,7 @@ import java.nio.file.Paths
 
 import akka.actor.ActorSystem
 import akka.kafka.ConsumerSettings
-import cakesolutions.kafka.KafkaProducer
+import cakesolutions.kafka.{KafkaConsumer, KafkaProducer}
 import com.ovoenergy.comms.serialisation.Retry._
 import com.ovoenergy.comms.serialisation.Serialisation._
 import com.ovoenergy.kafka.serialization.avro.SchemaRegistryClientSettings
@@ -14,6 +14,7 @@ import org.apache.kafka.clients.producer.{ProducerRecord, RecordMetadata}
 import org.apache.kafka.common.config.SslConfigs
 import org.apache.kafka.common.serialization.{Deserializer, Serializer, StringDeserializer, StringSerializer}
 import cats.implicits._
+
 import scala.concurrent.Future
 import scala.reflect.ClassTag
 
@@ -92,6 +93,14 @@ case class Topic[E](configName: String)(implicit val kafkaConfig: KafkaClusterCo
     localProducer.map { producer => (event: E) =>
       producer.send(new ProducerRecord[String, E](name, event))
     }
+  }
+
+  def consumer(implicit schemaFor: SchemaFor[E],
+               toRecord: FromRecord[E],
+               classTag: ClassTag[E]) = {
+    deserializer
+      .map(KafkaConsumer.Conf(new StringDeserializer, _, kafkaConfig.hosts, groupId))
+      .map(KafkaConsumer.apply)
   }
 
   def retryPublisher(implicit schemaFor: SchemaFor[E],
