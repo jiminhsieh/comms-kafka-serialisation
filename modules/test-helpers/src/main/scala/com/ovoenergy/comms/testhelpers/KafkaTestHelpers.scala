@@ -41,7 +41,7 @@ object KafkaTestHelpers {
 
   def withThrowawayConsumerFor[E1: SchemaFor: FromRecord: ClassTag, R](topic: Topic[E1])(
       f: JKafkaConsumer[String, Option[E1]] => R): R = {
-    val consumer = topic.consumer(fromBeginning = false)
+    val consumer = topic.testConsumer(fromBeginning = false)
     consumer.poll(0)
     consumer.partitionsFor(topic.name) // as poll doesn't honour the timeout, forcing the consumer to fail here.
     log.info(
@@ -68,9 +68,9 @@ object KafkaTestHelpers {
   }
 
   implicit class PimpedTestingTopic[E](topic: Topic[E]) {
-    def consumer(fromBeginning: Boolean = true)(implicit schemaFor: SchemaFor[E],
-                                                fromRecord: FromRecord[E],
-                                                classTag: ClassTag[E]): JKafkaConsumer[String, Option[E]] = {
+    def testConsumer(fromBeginning: Boolean = true)(implicit schemaFor: SchemaFor[E],
+                                                    fromRecord: FromRecord[E],
+                                                    classTag: ClassTag[E]): JKafkaConsumer[String, Option[E]] = {
 
       val deserializer = throwExceptionIfFailed(topic.deserializer)
       val initialConsumerSettings =
@@ -105,7 +105,7 @@ object KafkaTestHelpers {
                      condition: E => Boolean = (_: E) => true)(implicit schemaFor: SchemaFor[E],
                                                                fromRecord: FromRecord[E],
                                                                classTag: ClassTag[E]): Seq[E] = {
-      val theConsumer = topic.consumer(fromBeginning = fromBeginning)
+      val theConsumer = topic.testConsumer(fromBeginning = fromBeginning)
       try {
         theConsumer.pollFor(pollTime, noOfEventsExpected, condition)
       } finally {
