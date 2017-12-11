@@ -1,10 +1,12 @@
 package com.ovoenergy.comms.helpers
 
 import java.nio.file.Paths
+import java.util.UUID
 
 import akka.actor.ActorSystem
 import akka.kafka.ConsumerSettings
-import cakesolutions.kafka.KafkaProducer
+import cakesolutions.kafka.KafkaConsumer.Conf
+import cakesolutions.kafka.{KafkaConsumer, KafkaProducer}
 import com.ovoenergy.comms.serialisation.Retry._
 import com.ovoenergy.comms.serialisation.Serialisation._
 import com.ovoenergy.kafka.serialization.avro.SchemaRegistryClientSettings
@@ -14,6 +16,7 @@ import org.apache.kafka.clients.producer.{ProducerRecord, RecordMetadata}
 import org.apache.kafka.common.config.SslConfigs
 import org.apache.kafka.common.serialization.{Deserializer, Serializer, StringDeserializer, StringSerializer}
 import cats.implicits._
+
 import scala.concurrent.Future
 import scala.reflect.ClassTag
 
@@ -92,6 +95,33 @@ case class Topic[E](configName: String)(implicit val kafkaConfig: KafkaClusterCo
     localProducer.map { producer => (event: E) =>
       producer.send(new ProducerRecord[String, E](name, event))
     }
+  }
+
+  def consumer(implicit schemaFor: SchemaFor[E], toRecord: FromRecord[E], classTag: ClassTag[E]) = {
+
+    val initialConsumerConf = deserializer
+      .map(KafkaConsumer.Conf(new StringDeserializer, _, kafkaConfig.hosts, groupId, false))
+
+    val sslConsumerSettings =
+      kafkaConfig.ssl
+        .map { ssl =>
+          initialConsumerConf
+            .map(
+              _.withProperty(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SSL")
+                .withProperty(SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG,
+                              Paths.get(ssl.keystore.location).toAbsolutePath.toString)
+                .withProperty(SslConfigs.SSL_KEYSTORE_TYPE_CONFIG, "PKCS12")
+                .withProperty(SslConfigs.SSL_KEYSTORE_PASSWORD_CONFIG, ssl.keystore.password)
+                .withProperty(SslConfigs.SSL_KEY_PASSWORD_CONFIG, ssl.keyPassword)
+                .withProperty(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, Paths.get(ssl.truststore.location).toString)
+                .withProperty(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, "JKS")
+                .withProperty(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, ssl.truststore.password))
+        }
+
+    val consumerConf = sslConsumerSettings.getOrElse(initialConsumerConf)
+
+    consumerConf
+      .map(conf => KafkaConsumer(conf.withProperty("auto.offset.reset", "earliest")))
   }
 
   def retryPublisher(implicit schemaFor: SchemaFor[E],
