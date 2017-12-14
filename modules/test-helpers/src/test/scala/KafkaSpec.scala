@@ -11,14 +11,14 @@ import scala.reflect.ClassTag
 
 class KafkaSpec extends FlatSpec with EmbeddedKafkaSpec with Matchers with ScalaFutures {
 
-  //Import magic for generating arbitraries, traversing HLists, serializing and deserializing stuff
+  // Import magic for generating arbitraries, traversing HLists, serializing and deserializing stuff
   import ArbGenerator._
   import TraverseTopicList._
   import com.ovoenergy.comms.serialisation.Codecs._
   import shapeless._
   import org.scalacheck.Shapeless._
 
-  //Pimp the topics
+  // Pimp the topics
   import KafkaTestHelpers._
 
   implicit val config: Config          = ConfigFactory.load()
