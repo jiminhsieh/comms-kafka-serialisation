@@ -10,8 +10,8 @@ val commonSettings = Seq(
       "confluent-release" at "http://packages.confluent.io/maven/"
     )
   ),
-  scalaVersion := "2.11.11",
-  crossScalaVersions += "2.12.2",
+  scalaVersion := "2.12.2",
+  crossScalaVersions += "2.11.12",
   organization := "com.ovoenergy",
   licenses += ("MIT", url("http://opensource.org/licenses/MIT"))
 )
