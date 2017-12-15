@@ -18,6 +18,9 @@ import org.apache.kafka.clients.consumer.KafkaConsumer
 import scala.concurrent.Future
 import scala.reflect.ClassTag
 
+import cats.syntax.either._
+import cats.instances.either._
+
 case class Topic[E](configName: String)(implicit val kafkaConfig: KafkaClusterConfig) {
 
   lazy val name: String = {
