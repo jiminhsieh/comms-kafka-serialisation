@@ -12,7 +12,6 @@ import com.ovoenergy.kafka.serialization.avro4s._
 import com.ovoenergy.kafka.serialization.core.Format.AvroBinarySchemaId
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import com.ovoenergy.kafka.serialization.core._
-import cats.implicits._
 import scala.reflect.ClassTag
 import scala.util.Try
 
@@ -71,7 +70,7 @@ object Serialisation {
     val baseDeserializer                       = avroBinarySchemaIdDeserializer[T](schemaRegistryClient, isKey = false)
     val formattedDeserializer: Deserializer[T] = formatCheckingDeserializer(AvroBinarySchemaId, baseDeserializer)
 
-    registerSchema[T](schemaRegistryClient, topic, schemaRegistryConfig).map { _ =>
+    registerSchema[T](schemaRegistryClient, topic, schemaRegistryConfig).right.map { _ =>
       new Deserializer[Option[T]] {
         override def configure(configs: util.Map[String, _], isKey: Boolean) {
           formattedDeserializer.configure(configs, isKey)
@@ -108,7 +107,7 @@ object Serialisation {
     val schemaRegistryClient = JerseySchemaRegistryClient(schemaRegistryClientSettings)
     val serializer           = avroBinarySchemaIdSerializer[T](schemaRegistryClient, isKey = false)
 
-    registerSchema[T](schemaRegistryClient, topic, retryConfig).map { _ =>
+    registerSchema[T](schemaRegistryClient, topic, retryConfig).right.map { _ =>
       formatSerializer(AvroBinarySchemaId, serializer)
     }
   }
