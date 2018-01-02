@@ -35,7 +35,7 @@ lazy val serialisation = Project("comms-kafka-serialisation", file("modules/seri
       "org.slf4j"           % "slf4j-api"                   % "1.7.21",
       "com.typesafe.akka"   %% "akka-stream-kafka"          % "0.17",
       "org.scalatest"       %% "scalatest"                  % "3.0.3" % Test,
-      "com.ovoenergy"       %% "comms-kafka-messages"       % "1.40" % Test,
+      "com.ovoenergy"       %% "comms-kafka-messages"       % "1.41" % Test,
       "org.slf4j"           % "slf4j-simple"                % "1.7.21" % Test
     )
   )
@@ -50,7 +50,7 @@ lazy val helpers = Project("comms-kafka-helpers", file("modules/helpers"))
     libraryDependencies ++= Seq(
       "net.cakesolutions"     %% "scala-kafka-client"   % "0.10.2.2",
       "com.github.pureconfig" %% "pureconfig"           % "0.7.2",
-      "com.ovoenergy"         %% "comms-kafka-messages" % "1.40",
+      "com.ovoenergy"         %% "comms-kafka-messages" % "1.41",
       "com.chuusai"           %% "shapeless"            % "2.3.2",
       "com.typesafe.akka"     %% "akka-stream-kafka"    % "0.17",
       "org.scalatest"         %% "scalatest"            % "3.0.3" % Test
