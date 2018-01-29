@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory
 import com.ovoenergy.kafka.serialization.avro4s._
 import com.ovoenergy.kafka.serialization.core.Format.AvroBinarySchemaId
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
+import org.apache.kafka.common.serialization.{Deserializer => KafkaDeserializer}
 import com.ovoenergy.kafka.serialization.core._
 import scala.reflect.ClassTag
 import scala.util.Try
@@ -62,13 +63,33 @@ object Serialisation {
       }
     }
 
+  /**
+    * Wraps a Kafka deserializer by checking if the first byte is the desired format byte. If the first byte is not the
+    * desired format, try anyway!
+    *
+    */
+  private[serialisation] def hackyFormatCheckingDeserializer[T](expectedFormat: Format,
+                                                                d: KafkaDeserializer[T],
+                                                                dropFormat: Boolean = true): KafkaDeserializer[T] =
+    deserializer({ (topic, data) =>
+      (if (data.isEmpty) {
+         nullDeserializer[T]
+       } else if (data(0) == Format.toByte(expectedFormat) && dropFormat) {
+         formatDroppingDeserializer(d)
+       } else if (data(0) == Format.toByte(expectedFormat) && !dropFormat) {
+         d
+       } else {
+         d
+       }).deserialize(topic, data)
+    })
+
   def avroBinarySchemaRegistryDeserializer[T: FromRecord: SchemaFor: ClassTag](
       schemaRegistryClientSettings: SchemaRegistryClientSettings,
       topic: String,
       schemaRegistryConfig: RetryConfig): Either[Retry.Failed, Deserializer[Option[T]]] = {
     val schemaRegistryClient                   = JerseySchemaRegistryClient(schemaRegistryClientSettings)
     val baseDeserializer                       = avroBinarySchemaIdDeserializer[T](schemaRegistryClient, isKey = false)
-    val formattedDeserializer: Deserializer[T] = formatCheckingDeserializer(AvroBinarySchemaId, baseDeserializer)
+    val formattedDeserializer: Deserializer[T] = hackyFormatCheckingDeserializer(AvroBinarySchemaId, baseDeserializer)
 
     registerSchema[T](schemaRegistryClient, topic, schemaRegistryConfig).right.map { _ =>
       new Deserializer[Option[T]] {
