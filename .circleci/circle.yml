@@ -2,7 +2,10 @@ version: 2
 jobs:
   build:
     working_directory: ~/comms-kafka-serialization
-    machine: true
+
+    docker:
+    - image: circleci/openjdk:8-jdk
+
     steps:
     - restore_cache:
           key: dependency-cache
