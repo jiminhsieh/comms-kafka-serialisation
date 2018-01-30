@@ -14,10 +14,12 @@ jobs:
             - "target/resolution-cache"
             - "project/target/resolution-cache"
       - checkout
-      - run: sbt -mem 1500 +test
+      - run: sbt -mem 1500 update
       - save_cache:
           key: dependency-cache
           paths:
             - "~/.sbt"
             - "target/resolution-cache"
             - "project/target/resolution-cache"
+
+      - run: sbt -mem 1500 +test
