@@ -7,7 +7,7 @@ jobs:
     - image: circleci/openjdk:8-jdk
 
     steps:
-    - restore_cache:
+      - restore_cache:
           key: dependency-cache
           paths:
             - "~/.sbt"
