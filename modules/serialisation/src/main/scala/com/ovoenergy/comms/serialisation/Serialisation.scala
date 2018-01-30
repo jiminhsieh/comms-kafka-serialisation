@@ -74,12 +74,13 @@ object Serialisation {
     deserializer({ (topic, data) =>
       (if (data.isEmpty) {
          nullDeserializer[T]
-       } else if (data(0) == Format.toByte(expectedFormat) && dropFormat) {
+       } else if (data.take(4).deep == IndexedSeq.fill(4)(0) && dropFormat) {
          formatDroppingDeserializer(d)
-       } else if (data(0) == Format.toByte(expectedFormat) && !dropFormat) {
-         d
        } else {
-         d
+         formatDroppingDeserializer(
+           deserializer(
+             xs => Try(d.deserialize(topic, xs)).orElse(Try(d.deserialize(topic, Array[Byte](0) ++ xs))).get)
+         )
        }).deserialize(topic, data)
     })
 

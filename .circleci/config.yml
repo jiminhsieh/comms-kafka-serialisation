@@ -2,19 +2,24 @@ version: 2
 jobs:
   build:
     working_directory: ~/comms-kafka-serialization
-    machine: true
+
+    docker:
+    - image: circleci/openjdk:8-jdk
+
     steps:
-    - restore_cache:
+      - restore_cache:
           key: dependency-cache
           paths:
             - "~/.sbt"
             - "target/resolution-cache"
             - "project/target/resolution-cache"
       - checkout
-      - run: sbt -mem 1500 +test
+      - run: sbt -mem 1500 update
       - save_cache:
           key: dependency-cache
           paths:
             - "~/.sbt"
             - "target/resolution-cache"
             - "project/target/resolution-cache"
+
+      - run: sbt -mem 1500 +test
