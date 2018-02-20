@@ -88,8 +88,9 @@ object Serialisation {
       schemaRegistryClientSettings: SchemaRegistryClientSettings,
       topic: String,
       schemaRegistryConfig: RetryConfig): Either[Retry.Failed, Deserializer[Option[T]]] = {
-    val schemaRegistryClient                   = JerseySchemaRegistryClient(schemaRegistryClientSettings)
-    val baseDeserializer                       = avroBinarySchemaIdDeserializer[T](schemaRegistryClient, isKey = false)
+    val schemaRegistryClient = JerseySchemaRegistryClient(schemaRegistryClientSettings)
+    val baseDeserializer =
+      avroBinarySchemaIdDeserializer[T](schemaRegistryClient, isKey = false, includesFormatByte = false)
     val formattedDeserializer: Deserializer[T] = hackyFormatCheckingDeserializer(AvroBinarySchemaId, baseDeserializer)
 
     registerSchema[T](schemaRegistryClient, topic, schemaRegistryConfig).right.map { _ =>
@@ -127,7 +128,7 @@ object Serialisation {
       topic: String,
       retryConfig: RetryConfig) = {
     val schemaRegistryClient = JerseySchemaRegistryClient(schemaRegistryClientSettings)
-    val serializer           = avroBinarySchemaIdSerializer[T](schemaRegistryClient, isKey = false)
+    val serializer           = avroBinarySchemaIdSerializer[T](schemaRegistryClient, isKey = false, includesFormatByte = false)
 
     registerSchema[T](schemaRegistryClient, topic, retryConfig).right.map { _ =>
       formatSerializer(AvroBinarySchemaId, serializer)

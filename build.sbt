@@ -30,8 +30,8 @@ lazy val serialisation = Project("comms-kafka-serialisation", file("modules/seri
     libraryDependencies ++= Seq(
       "com.sksamuel.avro4s" %% "avro4s-core"                % "1.6.4-ovo-1",
       "org.apache.kafka"    % "kafka-clients"               % "0.10.2.1",
-      "com.ovoenergy"       %% "kafka-serialization-core"   % "0.1.18",
-      "com.ovoenergy"       %% "kafka-serialization-avro4s" % "0.1.18",
+      "com.ovoenergy"       %% "kafka-serialization-core"   % "0.3.6",
+      "com.ovoenergy"       %% "kafka-serialization-avro4s" % "0.3.6",
       "org.slf4j"           % "slf4j-api"                   % "1.7.21",
       "com.typesafe.akka"   %% "akka-stream-kafka"          % "0.17",
       "org.scalatest"       %% "scalatest"                  % "3.0.3" % Test,
