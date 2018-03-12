@@ -30,4 +30,5 @@ object HasCommName {
   implicit val ComposedEmailHasCommName     = HasCommName.instance[ComposedEmailV3](_.metadata.commManifest.name)
   implicit val ComposedSMSHasCommName       = HasCommName.instance[ComposedSMSV3](_.metadata.commManifest.name)
   implicit val ComposedPrintHasCommName     = HasCommName.instance[ComposedPrint](_.metadata.commManifest.name)
+  implicit val TriggeredHasCommName         = HasCommName.instance[TriggeredV3](_.metadata.commManifest.name)
 }
