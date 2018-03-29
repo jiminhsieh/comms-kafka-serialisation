@@ -1,6 +1,7 @@
 package com.ovoenergy.comms.helpers
 
 import java.nio.file.Paths
+
 import cakesolutions.kafka.{KafkaConsumer => CsKafkaConsumer, KafkaProducer => CsKafkaProducer}
 import akka.actor.ActorSystem
 import akka.kafka.ConsumerSettings
@@ -14,7 +15,8 @@ import org.apache.kafka.clients.producer.{ProducerRecord, RecordMetadata}
 import org.apache.kafka.common.config.SslConfigs
 import org.apache.kafka.common.serialization.{Deserializer, Serializer, StringDeserializer, StringSerializer}
 import org.apache.kafka.clients.consumer.KafkaConsumer
-import scala.concurrent.Future
+
+import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.ClassTag
 
 case class Topic[E](configName: String)(implicit val kafkaConfig: KafkaClusterConfig) {
@@ -99,7 +101,8 @@ case class Topic[E](configName: String)(implicit val kafkaConfig: KafkaClusterCo
                      classTag: ClassTag[E],
                      eventLogger: EventLogger[E],
                      hasCommName: HasCommName[E],
-                     actorSystem: ActorSystem): Either[Failed, (E) => Future[RecordMetadata]] = {
+                     actorSystem: ActorSystem,
+                     executionContext: ExecutionContext): Either[Failed, (E) => Future[RecordMetadata]] = {
     val localProducer = producer
 
     kafkaConfig.retry match {
@@ -108,7 +111,6 @@ case class Topic[E](configName: String)(implicit val kafkaConfig: KafkaClusterCo
         localProducer.right.map { producer => (event: E) =>
           {
             implicit val scheduler = actorSystem.scheduler
-            import scala.concurrent.ExecutionContext.Implicits.global
             retryAsync(
               config = retry,
               onFailure = e => {
