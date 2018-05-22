@@ -24,6 +24,8 @@ lazy val root = Project("root", file("."))
   )
   .aggregate(serialisation, helpers, testHelpers)
 
+lazy val commsKafkaMessagesVersion = "1.67"
+
 lazy val serialisation = Project("comms-kafka-serialisation", file("modules/serialisation"))
   .settings(commonSettings)
   .settings(
@@ -35,7 +37,7 @@ lazy val serialisation = Project("comms-kafka-serialisation", file("modules/seri
       "org.slf4j"           % "slf4j-api"                   % "1.7.21",
       "com.typesafe.akka"   %% "akka-stream-kafka"          % "0.19",
       "org.scalatest"       %% "scalatest"                  % "3.0.3" % Test,
-      "com.ovoenergy"       %% "comms-kafka-messages"       % "1.41" % Test,
+      "com.ovoenergy"       %% "comms-kafka-messages"       % commsKafkaMessagesVersion % Test,
       "org.slf4j"           % "slf4j-simple"                % "1.7.21" % Test
     )
   )
@@ -50,7 +52,7 @@ lazy val helpers = Project("comms-kafka-helpers", file("modules/helpers"))
     libraryDependencies ++= Seq(
       "net.cakesolutions"     %% "scala-kafka-client"   % "0.11.0.1",
       "com.github.pureconfig" %% "pureconfig"           % "0.7.2",
-      "com.ovoenergy"         %% "comms-kafka-messages" % "1.41",
+      "com.ovoenergy"         %% "comms-kafka-messages" % commsKafkaMessagesVersion,
       "com.chuusai"           %% "shapeless"            % "2.3.2",
       "com.typesafe.akka"     %% "akka-stream-kafka"    % "0.19",
       "org.scalatest"         %% "scalatest"            % "3.0.3" % Test
