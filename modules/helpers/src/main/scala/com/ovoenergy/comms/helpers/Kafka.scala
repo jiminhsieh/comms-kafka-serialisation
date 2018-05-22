@@ -89,13 +89,12 @@ object Kafka {
       val v3 = Topic[CancelledV3]("cancelledV3")
     }
 
-    val allTopics = triggered.v3 :: triggered.v4 :: composedEmail.v2 :: composedEmail.v3 :: composedEmail.v3 ::
-      composedEmail.v4 :: composedSms.v2 :: composedSms.v3 :: composedSms.v3 :: composedSms.v4 ::
-      composedPrint.v1 :: composedPrint.v2 :: failed.v2 :: failed.v3 :: issuedForDelivery.v2 :: issuedForDelivery.v3 ::
-      orchestratedEmail.v3 :: orchestratedEmail.v4 :: orchestratedSMS.v2 :: orchestratedSMS.v3 ::
-      progressedEmail.v2 :: progressedEmail.v3 :: progressedSMS.v2 :: progressedSMS.v3 :: linkClicked.v2 ::
-      linkClicked.v3 :: cancellationRequested.v2 :: cancellationRequested.v3 :: failedCancellation.v2 ::
-      failedCancellation.v3 :: cancelled.v2 :: cancelled.v3 :: HNil
+    val allTopics = triggered.v3 :: triggered.v4 :: composedEmail.v2 :: composedEmail.v3 :: composedEmail.v4 ::
+      composedSms.v2 :: composedSms.v3 :: composedSms.v4 :: composedPrint.v1 :: composedPrint.v2 :: failed.v2 ::
+      failed.v3 :: issuedForDelivery.v2 :: issuedForDelivery.v3 :: orchestratedEmail.v3 :: orchestratedEmail.v4 ::
+      orchestratedSMS.v2 :: orchestratedSMS.v3 :: progressedEmail.v2 :: progressedEmail.v3 :: progressedSMS.v2 ::
+      progressedSMS.v3 :: linkClicked.v2 :: linkClicked.v3 :: cancellationRequested.v2 :: cancellationRequested.v3 ::
+      failedCancellation.v2 :: failedCancellation.v3 :: cancelled.v2 :: cancelled.v3 :: HNil
   }
 
 }
