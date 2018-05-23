@@ -38,7 +38,7 @@ object Kafka {
     }
     val composedPrint = new {
       val v1 = Topic[ComposedPrint]("composedPrint")
-      val v2 = Topic[ComposedPrint]("composedPrintV2")
+      val v2 = Topic[ComposedPrintV2]("composedPrintV2")
     }
     val failed = new {
       val v2 = Topic[FailedV2]("failedV2")
