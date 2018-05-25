@@ -20,11 +20,12 @@ lazy val root = Project("root", file("."))
   .settings(commonSettings)
   .settings(
     releasePublishArtifactsAction := {},
-    publishArtifact := false
+    publishArtifact := false,
+    name := "comms-kafka-serialisation"
   )
   .aggregate(serialisation, helpers, testHelpers)
 
-lazy val commsKafkaMessagesVersion = "1.67"
+lazy val commsKafkaMessagesVersion = "1.68"
 
 lazy val serialisation = Project("comms-kafka-serialisation", file("modules/serialisation"))
   .settings(commonSettings)
