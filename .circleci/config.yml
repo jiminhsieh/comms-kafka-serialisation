@@ -11,6 +11,8 @@ jobs:
           key: dependency-cache
           paths:
             - "~/.sbt"
+            - "~/.ivy2/cache"
+            - "~/.m2"
             - "target/resolution-cache"
             - "project/target/resolution-cache"
       - checkout
@@ -19,6 +21,8 @@ jobs:
           key: dependency-cache
           paths:
             - "~/.sbt"
+            - "~/.ivy2/cache"
+            - "~/.m2"
             - "target/resolution-cache"
             - "project/target/resolution-cache"
 
