@@ -78,8 +78,7 @@ object Serialisation {
          formatDroppingDeserializer(d)
        } else {
          formatDroppingDeserializer(
-           deserializer(
-             xs => Try(d.deserialize(topic, xs)).orElse(Try(d.deserialize(topic, Array[Byte](0) ++ xs))).get)
+           deserializer(xs => Try(d.deserialize(topic, xs)).orElse(Try(d.deserialize(topic, Array[Byte](0) ++ xs))).get)
          )
        }).deserialize(topic, data)
     })
