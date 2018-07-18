@@ -4,13 +4,13 @@ testOptions in ThisBuild += Tests.Argument(TestFrameworks.ScalaTest, "-o", "-u",
 
 val commonSettings = Seq(
   bintrayOrganization := Some("ovotech"),
-  resolvers := Resolver.withDefaultResolvers(
-    Seq(
+  resolvers := Resolver.combineDefaultResolvers(
+    Vector(
       Resolver.bintrayRepo("ovotech", "maven"),
       "confluent-release" at "http://packages.confluent.io/maven/"
     )
   ),
-  scalaVersion := "2.12.2",
+  scalaVersion := "2.12.6",
   crossScalaVersions += "2.11.12",
   organization := "com.ovoenergy",
   licenses += ("MIT", url("http://opensource.org/licenses/MIT"))
