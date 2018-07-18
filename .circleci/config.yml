@@ -22,4 +22,4 @@ jobs:
             - "target/resolution-cache"
             - "project/target/resolution-cache"
 
-      - run: sbt -mem 1500 +test
+      - run: sbt -mem 2048 +test
